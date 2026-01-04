@@ -2,6 +2,7 @@
 
 use App\Livewire\ProductList;
 use App\Livewire\ProductDetail;
+use App\Livewire\CartPage;
 use App\Livewire\Checkout;
 use App\Livewire\Admin\Dashboard;
 use App\Livewire\Admin\ProductManagement;
@@ -27,6 +28,9 @@ Route::get('/', function () {
 // Product Routes
 Route::get('/products', ProductList::class)->name('products.index');
 Route::get('/products/{product:slug}', ProductDetail::class)->name('products.show');
+
+// Cart Route
+Route::get('/cart', CartPage::class)->name('cart.index');
 
 // Checkout Route
 Route::get('/checkout', Checkout::class)

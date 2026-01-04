@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Product;
+use App\Services\CartService;
 use Livewire\Component;
 
 class ProductDetail extends Component
@@ -54,16 +55,15 @@ class ProductDetail extends Component
         }
     }
 
-    public function addToCart()
+    public function addToCart(CartService $cartService)
     {
-        $this->dispatch('add-to-cart', [
-            'productId' => $this->product->id,
-            'variants' => $this->selectedVariants,
-            'quantity' => $this->quantity,
-            'price' => $this->currentPrice,
-        ]);
+        $cartService->add(
+            $this->product->id, 
+            $this->quantity, 
+            $this->selectedVariants
+        );
 
-        $this->dispatch('cart-updated');
+        $this->dispatch('cartUpdated');
         
         session()->flash('message', 'Product added to cart successfully!');
     }
