@@ -3,7 +3,7 @@
 use App\Livewire\ProductList;
 use App\Livewire\ProductDetail;
 use App\Livewire\CartPage;
-use App\Livewire\Checkout;
+use App\Livewire\CheckoutForm;
 use App\Livewire\Admin\Dashboard;
 use App\Livewire\Admin\ProductManagement;
 use App\Livewire\Admin\OrderManagement;
@@ -33,7 +33,7 @@ Route::get('/products/{product:slug}', ProductDetail::class)->name('products.sho
 Route::get('/cart', CartPage::class)->name('cart.index');
 
 // Checkout Route
-Route::get('/checkout', Checkout::class)
+Route::get('/checkout', CheckoutForm::class)
     ->middleware('auth')
     ->name('checkout');
 
@@ -50,4 +50,3 @@ Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function () {
 });
 
 require __DIR__.'/auth.php';
-
