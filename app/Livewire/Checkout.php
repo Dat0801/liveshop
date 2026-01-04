@@ -2,16 +2,16 @@
 
 namespace App\Livewire;
 
-use App\Models\Cart;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Services\CartService;
 use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\Attributes\Validate;
 
 class Checkout extends Component
 {
-    public $cart;
+    public $items;
 
     #[Validate('required|string|max:255')]
     public $billing_name = '';
@@ -67,20 +67,16 @@ class Checkout extends Component
     public $shipping = 0;
     public $total = 0;
 
-    public function mount()
+    public function mount(CartService $cartService)
     {
-        $this->loadCart();
+        $this->loadCart($cartService);
         $this->calculateTotals();
     }
 
-    protected function loadCart()
+    protected function loadCart(CartService $cartService)
     {
-        $sessionId = session()->getId();
-        $this->cart = Cart::with(['items.product'])
-            ->where('session_id', $sessionId)
-            ->first();
-
-        if (!$this->cart || $this->cart->items->isEmpty()) {
+        $this->items = $cartService->getItems();
+        if ($this->items->isEmpty()) {
             return redirect()->route('products.index')
                 ->with('error', 'Your cart is empty!');
         }
@@ -88,11 +84,11 @@ class Checkout extends Component
 
     protected function calculateTotals()
     {
-        if (!$this->cart) {
+        if (!$this->items || $this->items->isEmpty()) {
             return;
         }
 
-        $this->subtotal = $this->cart->getSubtotal();
+        $this->subtotal = $this->items->sum('subtotal');
         $this->tax = $this->subtotal * 0.1; // 10% tax
         $this->shipping = $this->subtotal > 100 ? 0 : 10; // Free shipping over $100
         $this->total = $this->subtotal + $this->tax + $this->shipping;
@@ -111,11 +107,11 @@ class Checkout extends Component
         }
     }
 
-    public function placeOrder()
+    public function placeOrder(CartService $cartService)
     {
         $this->validate();
 
-        if (!$this->cart || $this->cart->items->isEmpty()) {
+        if (!$this->items || $this->items->isEmpty()) {
             session()->flash('error', 'Your cart is empty!');
             return;
         }
@@ -148,7 +144,7 @@ class Checkout extends Component
         ]);
 
         // Create order items
-        foreach ($this->cart->items as $item) {
+        foreach ($this->items as $item) {
             OrderItem::create([
                 'order_id' => $order->id,
                 'product_id' => $item->product_id,
@@ -157,16 +153,15 @@ class Checkout extends Component
                 'variants' => $item->variants,
                 'quantity' => $item->quantity,
                 'price' => $item->price,
-                'subtotal' => $item->getSubtotal(),
+                'subtotal' => $item->subtotal,
             ]);
 
             // Update product stock
             $item->product->decrement('stock_quantity', $item->quantity);
         }
 
-        // Clear cart
-        $this->cart->items()->delete();
-        $this->cart->delete();
+        // Clear cart (session)
+        $cartService->clear();
 
         return redirect()->route('order.success', $order->id)
             ->with('success', 'Order placed successfully!');

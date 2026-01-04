@@ -136,14 +136,14 @@
                     <div class="bg-white rounded-lg shadow-md p-6 sticky top-20">
                         <h2 class="text-xl font-semibold mb-4">Order Summary</h2>
 
-                        @if($cart && $cart->items->isNotEmpty())
+                        @if($items && $items->isNotEmpty())
                             <div class="space-y-3 mb-4 max-h-64 overflow-y-auto">
-                                @foreach($cart->items as $item)
+                                @foreach($items as $item)
                                     <div class="flex justify-between text-sm">
                                         <span class="text-gray-600">
                                             {{ $item->product->name }} × {{ $item->quantity }}
                                         </span>
-                                        <span class="font-semibold">${{ number_format($item->getSubtotal(), 2) }}</span>
+                                        <span class="font-semibold">${{ number_format($item->subtotal, 2) }}</span>
                                     </div>
                                 @endforeach
                             </div>

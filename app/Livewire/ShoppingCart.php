@@ -2,19 +2,20 @@
 
 namespace App\Livewire;
 
-use App\Models\Cart;
-use App\Models\CartItem;
 use App\Models\Product;
+use App\Services\CartService;
 use Livewire\Component;
 use Livewire\Attributes\On;
 
 class ShoppingCart extends Component
 {
-    public $cart;
+    public $items;
     public $isOpen = false;
+    protected CartService $cartService;
 
-    public function mount()
+    public function mount(CartService $cartService)
     {
+        $this->cartService = $cartService;
         $this->loadCart();
     }
 
@@ -27,64 +28,36 @@ class ShoppingCart extends Component
             return;
         }
 
-        $cart = $this->getOrCreateCart();
-
-        // Check if item already exists in cart
-        $existingItem = $cart->items()
-            ->where('product_id', $productId)
-            ->where('variants', json_encode($variants))
-            ->first();
-
-        if ($existingItem) {
-            $existingItem->update([
-                'quantity' => $existingItem->quantity + $quantity,
-            ]);
-        } else {
-            CartItem::create([
-                'cart_id' => $cart->id,
-                'product_id' => $productId,
-                'variants' => $variants,
-                'quantity' => $quantity,
-                'price' => $price ?? $product->getCurrentPrice(),
-            ]);
-        }
+        $this->cartService->add($productId, $quantity, $variants);
 
         $this->loadCart();
         $this->dispatch('cart-updated');
         $this->isOpen = true;
     }
 
-    public function updateQuantity($itemId, $quantity)
+    public function updateQuantity($rowId, $quantity)
     {
         if ($quantity < 1) {
             return;
         }
 
-        $item = CartItem::find($itemId);
-        if ($item && $item->cart_id === $this->cart->id) {
-            $item->update(['quantity' => $quantity]);
-            $this->loadCart();
-            $this->dispatch('cart-updated');
-        }
+        $this->cartService->update($rowId, $quantity);
+        $this->loadCart();
+        $this->dispatch('cart-updated');
     }
 
-    public function removeItem($itemId)
+    public function removeItem($rowId)
     {
-        $item = CartItem::find($itemId);
-        if ($item && $item->cart_id === $this->cart->id) {
-            $item->delete();
-            $this->loadCart();
-            $this->dispatch('cart-updated');
-        }
+        $this->cartService->remove($rowId);
+        $this->loadCart();
+        $this->dispatch('cart-updated');
     }
 
     public function clearCart()
     {
-        if ($this->cart) {
-            $this->cart->items()->delete();
-            $this->loadCart();
-            $this->dispatch('cart-updated');
-        }
+        $this->cartService->clear();
+        $this->loadCart();
+        $this->dispatch('cart-updated');
     }
 
     public function toggleCart()
@@ -92,28 +65,9 @@ class ShoppingCart extends Component
         $this->isOpen = !$this->isOpen;
     }
 
-    protected function getOrCreateCart()
-    {
-        $sessionId = session()->getId();
-
-        $cart = Cart::where('session_id', $sessionId)->first();
-
-        if (!$cart) {
-            $cart = Cart::create([
-                'session_id' => $sessionId,
-                'user_id' => auth()->id(),
-            ]);
-        }
-
-        return $cart;
-    }
-
     protected function loadCart()
     {
-        $sessionId = session()->getId();
-        $this->cart = Cart::with(['items.product'])
-            ->where('session_id', $sessionId)
-            ->first();
+        $this->items = $this->cartService->getItems();
     }
 
     public function render()

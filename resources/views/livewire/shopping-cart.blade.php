@@ -44,9 +44,9 @@
 
             <!-- Cart Items -->
             <div class="flex-1 overflow-y-auto p-6">
-                @if($cart && $cart->items->isNotEmpty())
+                @if($items && $items->isNotEmpty())
                     <div class="space-y-4">
-                        @foreach($cart->items as $item)
+                        @foreach($items as $item)
                             <div class="flex space-x-4 border-b pb-4">
                                 <!-- Product Image -->
                                 <div class="w-20 h-20 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
@@ -81,7 +81,7 @@
                                     <!-- Quantity Controls -->
                                     <div class="flex items-center space-x-2 mt-2">
                                         <button 
-                                            wire:click="updateQuantity({{ $item->id }}, {{ $item->quantity - 1 }})"
+                                            wire:click="updateQuantity('{{ $item->id }}', {{ $item->quantity - 1 }})"
                                             class="w-6 h-6 rounded border border-gray-300 hover:bg-gray-100 flex items-center justify-center">
                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
@@ -89,14 +89,14 @@
                                         </button>
                                         <span class="w-8 text-center">{{ $item->quantity }}</span>
                                         <button 
-                                            wire:click="updateQuantity({{ $item->id }}, {{ $item->quantity + 1 }})"
+                                            wire:click="updateQuantity('{{ $item->id }}', {{ $item->quantity + 1 }})"
                                             class="w-6 h-6 rounded border border-gray-300 hover:bg-gray-100 flex items-center justify-center">
                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                                             </svg>
                                         </button>
                                         <button 
-                                            wire:click="removeItem({{ $item->id }})"
+                                            wire:click="removeItem('{{ $item->id }}')"
                                             class="ml-auto text-red-500 hover:text-red-700">
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -108,7 +108,7 @@
                                 <!-- Subtotal -->
                                 <div class="text-right">
                                     <p class="font-semibold text-gray-900">
-                                        ${{ number_format($item->getSubtotal(), 2) }}
+                                        ${{ number_format($item->subtotal, 2) }}
                                     </p>
                                 </div>
                             </div>
@@ -126,13 +126,13 @@
             </div>
 
             <!-- Footer -->
-            @if($cart && $cart->items->isNotEmpty())
+            @if($items && $items->isNotEmpty())
                 <div class="border-t p-6 bg-gray-50">
                     <!-- Subtotal -->
                     <div class="flex justify-between mb-4">
                         <span class="text-lg font-semibold">Subtotal</span>
                         <span class="text-lg font-bold text-primary-600">
-                            ${{ number_format($cart->getSubtotal(), 2) }}
+                            ${{ number_format($items->sum('subtotal'), 2) }}
                         </span>
                     </div>
 
