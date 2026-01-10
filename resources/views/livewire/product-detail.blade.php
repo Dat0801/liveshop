@@ -34,6 +34,16 @@
                         @endforeach
                     </div>
                 @endif
+                
+                <!-- Full Description -->
+                @if($product->description)
+                    <div class="bg-white rounded-lg shadow-md p-6 mt-6">
+                        <h3 class="text-xl font-semibold mb-4">Product Details</h3>
+                        <div class="text-gray-700 prose max-w-none">
+                            {!! nl2br(e($product->description)) !!}
+                        </div>
+                    </div>
+                @endif
             </div>
 
             <!-- Product Details -->
@@ -171,16 +181,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Full Description -->
-                @if($product->description)
-                    <div class="bg-white rounded-lg shadow-md p-6 mt-6">
-                        <h3 class="text-xl font-semibold mb-4">Product Details</h3>
-                        <div class="text-gray-700 prose max-w-none">
-                            {!! nl2br(e($product->description)) !!}
-                        </div>
-                    </div>
-                @endif
             </div>
         </div>
     </div>

@@ -7,6 +7,16 @@ use App\Livewire\Checkout;
 use App\Livewire\Admin\Dashboard;
 use App\Livewire\Admin\ProductManagement;
 use App\Livewire\Admin\OrderManagement;
+use App\Livewire\Auth\Login;
+use App\Livewire\Auth\Register;
+use App\Livewire\Auth\ForgotPassword;
+use App\Livewire\Auth\ResetPassword;
+use App\Livewire\Auth\VerifyEmail;
+use App\Livewire\User\Dashboard as UserDashboard;
+use App\Livewire\User\Profile;
+use App\Livewire\User\ChangePassword;
+use App\Livewire\User\ManageAddresses;
+use App\Livewire\User\OrderHistory;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -23,6 +33,28 @@ use Illuminate\Support\Facades\Route;
 // Homepage
 Route::get('/', function () {
     return redirect()->route('products.index');
+});
+
+// Auth Routes
+Route::middleware('guest')->group(function () {
+    Route::get('/login', Login::class)->name('login');
+    Route::get('/register', Register::class)->name('register');
+    Route::get('/forgot-password', ForgotPassword::class)->name('password.request');
+    Route::get('/reset-password/{token}', ResetPassword::class)->name('password.reset');
+});
+
+Route::middleware('auth')->group(function () {
+    Route::get('/verify-email', VerifyEmail::class)->name('verification.notice');
+});
+
+// User Routes
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/profile', UserDashboard::class)->name('profile');
+    Route::get('/profile/settings', Profile::class)->name('profile.settings');
+    Route::get('/profile/change-password', ChangePassword::class)->name('profile.change-password');
+    Route::get('/profile/addresses', ManageAddresses::class)->name('profile.addresses');
+    Route::get('/profile/orders', OrderHistory::class)->name('profile.orders');
+    Route::get('/order/{order}', fn() => view('order-detail'))->name('order.detail');
 });
 
 // Product Routes

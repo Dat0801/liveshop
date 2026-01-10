@@ -1,9 +1,9 @@
 <div>
     <!-- Cart Sidebar -->
     <div 
-        x-data="{ open: @entangle('isOpen') }"
-        @toggle-cart.window="open = !open"
-        @cart-updated.window="$wire.$refresh()"
+        x-data="{ open: false }"
+        @open-cart.window="open = true; console.log('Cart opened')"
+        @close-cart.window="open = false"
         class="relative z-50">
         
         <!-- Overlay -->
