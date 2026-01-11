@@ -7,6 +7,13 @@ use App\Livewire\Checkout;
 use App\Livewire\Admin\Dashboard;
 use App\Livewire\Admin\ProductManagement;
 use App\Livewire\Admin\OrderManagement;
+use App\Livewire\Admin\CategoryManagement;
+use App\Livewire\Admin\VariantManagement;
+use App\Livewire\Admin\MediaManager;
+use App\Livewire\Admin\CouponManagement;
+use App\Livewire\Admin\UserManagement;
+use App\Livewire\Admin\StockAdjustments;
+use App\Livewire\Admin\ShippingMethods;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
 use App\Livewire\Auth\ForgotPassword;
@@ -77,14 +84,14 @@ Route::get('/order/success/{order}', function ($order) {
 // Admin Routes
 Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/dashboard', Dashboard::class)->name('admin.dashboard');
-    Route::get('/categories', \App\Livewire\Admin\CategoryManagement::class)->name('admin.categories');
+    Route::get('/categories', CategoryManagement::class)->name('admin.categories');
     Route::get('/products', ProductManagement::class)->name('admin.products');
-    Route::get('/products/{product}/variants', \App\Livewire\Admin\VariantManagement::class)->name('admin.products.variants');
-    Route::get('/products/{product}/media', \App\Livewire\Admin\MediaManager::class)->name('admin.products.media');
-    Route::get('/coupons', \App\Livewire\Admin\CouponManagement::class)->name('admin.coupons');
-    Route::get('/users', \App\Livewire\Admin\UserManagement::class)->name('admin.users');
-    Route::get('/inventory/adjustments', \App\Livewire\Admin\StockAdjustments::class)->name('admin.stock.adjustments');
-    Route::get('/shipping/methods', \App\Livewire\Admin\ShippingMethods::class)->name('admin.shipping.methods');
+    Route::get('/products/{product}/variants', VariantManagement::class)->name('admin.products.variants');
+    Route::get('/products/{product}/media', MediaManager::class)->name('admin.products.media');
+    Route::get('/coupons', CouponManagement::class)->name('admin.coupons');
+    Route::get('/users', UserManagement::class)->name('admin.users');
+    Route::get('/inventory/adjustments', StockAdjustments::class)->name('admin.stock.adjustments');
+    Route::get('/shipping/methods', ShippingMethods::class)->name('admin.shipping.methods');
     Route::get('/orders', OrderManagement::class)->name('admin.orders');
 });
 
