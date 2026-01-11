@@ -63,7 +63,9 @@ class ProductDetail extends Component
             $this->selectedVariants
         );
 
-        $this->dispatch('cartUpdated');
+        // Notify UI to open the drawer and refresh cart counters
+        $this->dispatch('open-cart');
+        $this->dispatch('cart-updated');
         
         session()->flash('message', 'Product added to cart successfully!');
     }

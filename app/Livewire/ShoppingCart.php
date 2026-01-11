@@ -11,16 +11,14 @@ class ShoppingCart extends Component
 {
     public $items;
     public $isOpen = false;
-    protected CartService $cartService;
 
     public function mount(CartService $cartService)
     {
-        $this->cartService = $cartService;
-        $this->loadCart();
+        $this->loadCart($cartService);
     }
 
     #[On('add-to-cart')]
-    public function addToCart($productId, $variants = [], $quantity = 1, $price = null)
+    public function addToCart($productId, $variants = [], $quantity = 1, $price = null, CartService $cartService)
     {
         $product = Product::find($productId);
 
@@ -28,36 +26,50 @@ class ShoppingCart extends Component
             return;
         }
 
-        $this->cartService->add($productId, $quantity, $variants);
+        $cartService->add($productId, $quantity, $variants);
 
-        $this->loadCart();
+        $this->loadCart($cartService);
         $this->dispatch('cart-updated');
         $this->isOpen = true;
     }
 
-    public function updateQuantity($rowId, $quantity)
+    #[On('open-cart')]
+    public function openCart(CartService $cartService)
+    {
+        $this->loadCart($cartService);
+        $this->isOpen = true;
+    }
+
+    #[On('cart-updated')]
+    public function refreshCart(CartService $cartService)
+    {
+        $this->loadCart($cartService);
+    }
+
+    public function updateQuantity($rowId, $quantity, CartService $cartService)
     {
         if ($quantity < 1) {
             return;
         }
 
-        $this->cartService->update($rowId, $quantity);
-        $this->loadCart();
+        $cartService->update($rowId, $quantity);
+        $this->loadCart($cartService);
         $this->dispatch('cart-updated');
     }
 
-    public function removeItem($rowId)
+    public function removeItem($rowId, CartService $cartService)
     {
-        $this->cartService->remove($rowId);
-        $this->loadCart();
+        $cartService->remove($rowId);
+        $this->loadCart($cartService);
         $this->dispatch('cart-updated');
     }
 
-    public function clearCart()
+    public function clearCart(CartService $cartService)
     {
-        $this->cartService->clear();
-        $this->loadCart();
+        $cartService->clear();
+        $this->loadCart($cartService);
         $this->dispatch('cart-updated');
+        $this->isOpen = false; // Close cart after clearing
     }
 
     public function toggleCart()
@@ -65,9 +77,9 @@ class ShoppingCart extends Component
         $this->isOpen = !$this->isOpen;
     }
 
-    protected function loadCart()
+    protected function loadCart(CartService $cartService)
     {
-        $this->items = $this->cartService->getItems();
+        $this->items = $cartService->getItems();
     }
 
     public function render()

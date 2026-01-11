@@ -23,7 +23,7 @@ class CartPage extends Component
         
         if ($item) {
             $cartService->update($rowId, $item->quantity + 1);
-            $this->dispatch('cartUpdated');
+            $this->dispatch('cart-updated');
         }
     }
 
@@ -38,17 +38,17 @@ class CartPage extends Component
             } else {
                 $cartService->remove($rowId);
             }
-            $this->dispatch('cartUpdated');
+            $this->dispatch('cart-updated');
         }
     }
 
     public function remove($rowId, CartService $cartService)
     {
         $cartService->remove($rowId);
-        $this->dispatch('cartUpdated');
+        $this->dispatch('cart-updated');
     }
 
-    #[On('cartUpdated')] 
+    #[On('cart-updated')] 
     public function refreshCart()
     {
         // This method is just to trigger a re-render when the event is heard
