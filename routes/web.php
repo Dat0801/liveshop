@@ -77,7 +77,9 @@ Route::get('/order/success/{order}', function ($order) {
 // Admin Routes
 Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/dashboard', Dashboard::class)->name('admin.dashboard');
+    Route::get('/categories', \App\Livewire\Admin\CategoryManagement::class)->name('admin.categories');
     Route::get('/products', ProductManagement::class)->name('admin.products');
+    Route::get('/products/{product}/variants', \App\Livewire\Admin\VariantManagement::class)->name('admin.products.variants');
     Route::get('/orders', OrderManagement::class)->name('admin.orders');
 });
 
