@@ -80,6 +80,11 @@ Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/categories', \App\Livewire\Admin\CategoryManagement::class)->name('admin.categories');
     Route::get('/products', ProductManagement::class)->name('admin.products');
     Route::get('/products/{product}/variants', \App\Livewire\Admin\VariantManagement::class)->name('admin.products.variants');
+    Route::get('/products/{product}/media', \App\Livewire\Admin\MediaManager::class)->name('admin.products.media');
+    Route::get('/coupons', \App\Livewire\Admin\CouponManagement::class)->name('admin.coupons');
+    Route::get('/users', \App\Livewire\Admin\UserManagement::class)->name('admin.users');
+    Route::get('/inventory/adjustments', \App\Livewire\Admin\StockAdjustments::class)->name('admin.stock.adjustments');
+    Route::get('/shipping/methods', \App\Livewire\Admin\ShippingMethods::class)->name('admin.shipping.methods');
     Route::get('/orders', OrderManagement::class)->name('admin.orders');
 });
 
