@@ -45,7 +45,7 @@
                                             {{ $statusLabels[$order->status] ?? ucfirst($order->status) }}
                                         </span>
                                     </td>
-                                    <td class="py-4 font-semibold text-gray-900">{{ number_format($order->total_amount, 0, ',', '.') }}đ</td>
+                                    <td class="py-4 font-semibold text-gray-900">${{ number_format($order->total, 2) }}</td>
                                     <td class="py-4">
                                         <a 
                                             href="{{ route('order.detail', $order->id) }}"

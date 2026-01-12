@@ -5,6 +5,7 @@ namespace App\Livewire\Auth;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
+use App\Services\CartService;
 
 #[Title('Login')]
 class Login extends Component
@@ -25,7 +26,7 @@ class Login extends Component
         'password.required' => 'Please enter your password',
     ];
 
-    public function login()
+    public function login(CartService $cartService)
     {
         $this->validate();
 
@@ -33,6 +34,9 @@ class Login extends Component
             ['email' => $this->email, 'password' => $this->password],
             $this->remember
         )) {
+            // Merge session cart into database cart
+            $cartService->mergeSessionCart();
+            
             return redirect()->intended('/');
         }
 

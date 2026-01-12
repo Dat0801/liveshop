@@ -14,7 +14,7 @@
             </div>
             <div class="bg-white rounded-lg shadow-md p-6">
                 <div class="text-gray-500 text-sm font-semibold mb-2">TOTAL SPENT</div>
-                <div class="text-3xl font-bold text-gray-900">{{ number_format($stats['total_spent'] ?? 0, 0, ',', '.') }}đ</div>
+                <div class="text-3xl font-bold text-gray-900">${{ number_format($stats['total_spent'] ?? 0, 2) }}</div>
             </div>
             <div class="bg-white rounded-lg shadow-md p-6">
                 <div class="text-gray-500 text-sm font-semibold mb-2">PENDING ORDERS</div>
