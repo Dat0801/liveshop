@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Product;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Session;
+use DomainException;
 
 class CartService
 {
@@ -24,8 +25,11 @@ class CartService
             return $item['product_id'] ?? $key;
         })->unique()->values()->all();
         
-        // Fetch fresh product data
-        $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
+        // Fetch fresh product data with variants
+        $products = Product::with('variants')
+            ->whereIn('id', $productIds)
+            ->get()
+            ->keyBy('id');
 
         $items = collect($cart)->map(function ($item, $rowId) use ($products) {
             // Handle legacy items where rowId is the productId
@@ -37,21 +41,23 @@ class CartService
                 return null;
             }
 
-            // Calculate price with variants
-            $price = $product->discount_price ?? $product->base_price;
-            
+            // Validate provided variants exist
             if (isset($item['variants']) && is_array($item['variants'])) {
-                 foreach ($item['variants'] as $type => $value) {
+                foreach ($item['variants'] as $type => $value) {
                     $variant = $product->variants
                         ->where('type', $type)
                         ->where('value', $value)
                         ->first();
 
-                    if ($variant) {
-                        $price += $variant->price_adjustment;
+                    if (!$variant) {
+                        $this->remove($rowId);
+                        return null;
                     }
                 }
             }
+
+            // Calculate price with variants
+            $price = $this->calculatePrice($product, $item['variants'] ?? []);
 
             return (object) [
                 'id' => $rowId, // Use the rowId as the unique identifier for the cart item
@@ -77,12 +83,27 @@ class CartService
      */
     public function add(int $productId, int $quantity = 1, array $variants = []): void
     {
+        $product = Product::with('variants')->findOrFail($productId);
+
         $cart = Session::get($this->sessionKey, []);
         
         // Generate a unique ID for this specific combination of product + variants
         // We sort variants to ensure array order doesn't affect the ID
         ksort($variants);
         $rowId = md5($productId . serialize($variants));
+
+        $currentQuantity = $cart[$rowId]['quantity'] ?? 0;
+        $desiredQuantity = $currentQuantity + $quantity;
+
+        $available = $this->getAvailableStock($product, $variants);
+
+        if ($available <= 0) {
+            throw new DomainException("{$product->name} is out of stock.");
+        }
+
+        if ($desiredQuantity > $available) {
+            throw new DomainException("Only {$available} left for {$product->name}.");
+        }
 
         if (isset($cart[$rowId])) {
             $cart[$rowId]['quantity'] += $quantity;
@@ -114,6 +135,14 @@ class CartService
         }
 
         if (isset($cart[$rowId])) {
+            $cartItem = $cart[$rowId];
+            $product = Product::with('variants')->findOrFail($cartItem['product_id']);
+            $available = $this->getAvailableStock($product, $cartItem['variants'] ?? []);
+
+            if ($quantity > $available) {
+                throw new DomainException("Only {$available} left for {$product->name}.");
+            }
+
             $cart[$rowId]['quantity'] = $quantity;
             Session::put($this->sessionKey, $cart);
         }
@@ -164,6 +193,52 @@ class CartService
     {
         $cart = Session::get($this->sessionKey, []);
         return array_sum(array_column($cart, 'quantity'));
+    }
+
+    /**
+     * Calculate unit price with variant adjustments.
+     */
+    protected function calculatePrice(Product $product, array $variants = []): float
+    {
+        $price = $product->discount_price ?? $product->base_price;
+
+        foreach ($variants as $type => $value) {
+            $variant = $product->variants
+                ->where('type', $type)
+                ->where('value', $value)
+                ->first();
+
+            if ($variant) {
+                $price += $variant->price_adjustment;
+            }
+        }
+
+        return $price;
+    }
+
+    /**
+     * Get available stock for a product + selected variants.
+     */
+    public function getAvailableStock(Product $product, array $variants = []): int
+    {
+        $available = $product->stock_quantity;
+
+        if (!empty($variants)) {
+            foreach ($variants as $type => $value) {
+                $variant = $product->variants
+                    ->where('type', $type)
+                    ->where('value', $value)
+                    ->first();
+
+                if (!$variant) {
+                    return 0;
+                }
+
+                $available = min($available, (int) $variant->stock_quantity);
+            }
+        }
+
+        return max($available, 0);
     }
 
     // Database syncing removed; cart is session-only.

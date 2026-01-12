@@ -55,19 +55,30 @@ class ProductDetail extends Component
         }
     }
 
+    public function updatedQuantity($value)
+    {
+        if ($value < 1) {
+            $this->quantity = 1;
+        }
+    }
+
     public function addToCart(CartService $cartService)
     {
-        $cartService->add(
-            $this->product->id, 
-            $this->quantity, 
-            $this->selectedVariants
-        );
+        try {
+            $cartService->add(
+                $this->product->id, 
+                $this->quantity, 
+                $this->selectedVariants
+            );
 
-        // Notify UI to open the drawer and refresh cart counters
-        $this->dispatch('open-cart');
-        $this->dispatch('cart-updated');
-        
-        session()->flash('message', 'Product added to cart successfully!');
+            // Notify UI to open the drawer and refresh cart counters
+            $this->dispatch('open-cart');
+            $this->dispatch('cart-updated');
+            
+            session()->flash('message', 'Product added to cart successfully!');
+        } catch (\DomainException $e) {
+            session()->flash('error', $e->getMessage());
+        }
     }
 
     public function render()

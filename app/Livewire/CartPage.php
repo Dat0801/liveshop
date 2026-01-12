@@ -22,8 +22,12 @@ class CartPage extends Component
         $item = $items->firstWhere('id', $rowId);
         
         if ($item) {
-            $cartService->update($rowId, $item->quantity + 1);
-            $this->dispatch('cart-updated');
+            try {
+                $cartService->update($rowId, $item->quantity + 1);
+                $this->dispatch('cart-updated');
+            } catch (\DomainException $e) {
+                session()->flash('error', $e->getMessage());
+            }
         }
     }
 
@@ -34,7 +38,12 @@ class CartPage extends Component
 
         if ($item) {
             if ($item->quantity > 1) {
-                $cartService->update($rowId, $item->quantity - 1);
+                try {
+                    $cartService->update($rowId, $item->quantity - 1);
+                } catch (\DomainException $e) {
+                    session()->flash('error', $e->getMessage());
+                    return;
+                }
             } else {
                 $cartService->remove($rowId);
             }

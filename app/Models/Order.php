@@ -19,6 +19,12 @@ class Order extends Model
         'tax',
         'shipping',
         'total',
+        'coupon_code',
+        'discount_amount',
+        'shipping_method_id',
+        'payment_method',
+        'payment_status',
+        'payment_transaction_id',
         'billing_name',
         'billing_email',
         'billing_phone',
@@ -42,6 +48,7 @@ class Order extends Model
         'tax' => 'decimal:2',
         'shipping' => 'decimal:2',
         'total' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
     ];
 
     public function user(): BelongsTo
@@ -52,6 +59,11 @@ class Order extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function shippingMethod(): BelongsTo
+    {
+        return $this->belongsTo(ShippingMethod::class);
     }
 
     public function scopePending($query)

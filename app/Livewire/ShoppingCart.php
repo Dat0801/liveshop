@@ -26,11 +26,15 @@ class ShoppingCart extends Component
             return;
         }
 
-        $cartService->add($productId, $quantity, $variants);
+        try {
+            $cartService->add($productId, $quantity, $variants);
 
-        $this->loadCart($cartService);
-        $this->dispatch('cart-updated');
-        $this->isOpen = true;
+            $this->loadCart($cartService);
+            $this->dispatch('cart-updated');
+            $this->isOpen = true;
+        } catch (\DomainException $e) {
+            session()->flash('error', $e->getMessage());
+        }
     }
 
     #[On('open-cart')]
@@ -52,9 +56,13 @@ class ShoppingCart extends Component
             return;
         }
 
-        $cartService->update($rowId, $quantity);
-        $this->loadCart($cartService);
-        $this->dispatch('cart-updated');
+        try {
+            $cartService->update($rowId, $quantity);
+            $this->loadCart($cartService);
+            $this->dispatch('cart-updated');
+        } catch (\DomainException $e) {
+            session()->flash('error', $e->getMessage());
+        }
     }
 
     public function removeItem($rowId, CartService $cartService)
