@@ -130,40 +130,40 @@
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">Rate *</label>
-                                        <input type="number" step="0.01" wire:model="rate" class="input">
+                                        <input type="number" step="0.01" wire:model.number="rate" class="input">
                                         @error('rate') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">Order Priority</label>
-                                        <input type="number" wire:model="display_order" class="input">
+                                        <input type="number" wire:model.number="display_order" class="input">
                                     </div>
                                 </div>
 
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">Min Order</label>
-                                        <input type="number" step="0.01" wire:model="min_order" class="input" placeholder="0.00">
+                                        <input type="number" step="0.01" wire:model.number="min_order" class="input" placeholder="0.00">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">Max Order</label>
-                                        <input type="number" step="0.01" wire:model="max_order" class="input" placeholder="No limit">
+                                        <input type="number" step="0.01" wire:model.number="max_order" class="input" placeholder="No limit">
                                     </div>
                                 </div>
 
                                 <div class="grid grid-cols-3 gap-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">Min Weight (g)</label>
-                                        <input type="number" wire:model="min_weight" class="input" placeholder="0">
+                                        <input type="number" wire:model.number="min_weight" class="input" placeholder="0">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">Max Weight (g)</label>
-                                        <input type="number" wire:model="max_weight" class="input" placeholder="No limit">
+                                        <input type="number" wire:model.number="max_weight" class="input" placeholder="No limit">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">Processing Days</label>
                                         <div class="flex gap-2">
-                                            <input type="number" wire:model="processing_days_min" class="input" placeholder="Min">
-                                            <input type="number" wire:model="processing_days_max" class="input" placeholder="Max">
+                                            <input type="number" wire:model.number="processing_days_min" class="input" placeholder="Min">
+                                            <input type="number" wire:model.number="processing_days_max" class="input" placeholder="Max">
                                         </div>
                                     </div>
                                 </div>

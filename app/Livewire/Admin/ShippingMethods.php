@@ -43,9 +43,9 @@ class ShippingMethods extends Component
             'min_order' => 'nullable|numeric|min:0',
             'max_order' => 'nullable|numeric|min:0|gte:min_order',
             'min_weight' => 'nullable|integer|min:0',
-            'max_weight' => 'nullable|integer|min:0',
+            'max_weight' => 'nullable|integer|min:0|gte:min_weight',
             'processing_days_min' => 'required|integer|min:0',
-            'processing_days_max' => 'required|integer|min:processing_days_min',
+            'processing_days_max' => 'required|integer|min:0|gte:processing_days_min',
             'is_active' => 'boolean',
             'display_order' => 'integer',
         ];

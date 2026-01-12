@@ -24,6 +24,7 @@ use App\Livewire\User\Profile;
 use App\Livewire\User\ChangePassword;
 use App\Livewire\User\ManageAddresses;
 use App\Livewire\User\OrderHistory;
+use App\Livewire\User\OrderDetail;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -61,7 +62,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile/change-password', ChangePassword::class)->name('profile.change-password');
     Route::get('/profile/addresses', ManageAddresses::class)->name('profile.addresses');
     Route::get('/profile/orders', OrderHistory::class)->name('profile.orders');
-    Route::get('/order/{order}', fn() => view('order-detail'))->name('order.detail');
+    Route::get('/order/{order}', OrderDetail::class)->name('order.detail');
 });
 
 // Product Routes

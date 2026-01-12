@@ -3,13 +3,30 @@
 namespace App\Services;
 
 use App\Models\Product;
+use App\Models\Cart;
+use App\Models\CartItem;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Auth;
 use DomainException;
 
 class CartService
 {
     protected $sessionKey = 'cart';
+
+    /**
+     * Get or create cart for authenticated user
+     */
+    protected function getOrCreateCart(): ?Cart
+    {
+        if (!Auth::check()) {
+            return null;
+        }
+
+        return Cart::firstOrCreate(
+            ['user_id' => Auth::id()]
+        );
+    }
 
     /**
      * Get all items in the cart.
@@ -18,6 +35,12 @@ class CartService
      */
     public function getItems(): Collection
     {
+        // For authenticated users, use database
+        if (Auth::check()) {
+            return $this->getItemsFromDatabase();
+        }
+
+        // For guests, use session
         $cart = Session::get($this->sessionKey, []);
         
         // Extract all unique product IDs, handling legacy items
@@ -74,6 +97,46 @@ class CartService
     }
 
     /**
+     * Get items from database for authenticated users
+     */
+    protected function getItemsFromDatabase(): Collection
+    {
+        $cart = $this->getOrCreateCart();
+        if (!$cart) {
+            return collect();
+        }
+
+        $cartItems = $cart->items()->with('product.variants')->get();
+
+        return $cartItems->map(function ($item) {
+            if (!$item->product) {
+                $item->delete();
+                return null;
+            }
+
+            $product = $item->product;
+            $variants = $item->variants ?? [];
+
+            // Calculate price with variants
+            $price = $this->calculatePrice($product, $variants);
+
+            // Generate rowId for consistency
+            ksort($variants);
+            $rowId = md5($product->id . serialize($variants));
+
+            return (object) [
+                'id' => $rowId,
+                'product_id' => $product->id,
+                'product' => $product,
+                'variants' => $variants,
+                'quantity' => $item->quantity,
+                'price' => $price,
+                'subtotal' => $price * $item->quantity,
+            ];
+        })->filter();
+    }
+
+    /**
      * Add a product to the cart.
      *
      * @param int $productId
@@ -85,6 +148,19 @@ class CartService
     {
         $product = Product::with('variants')->findOrFail($productId);
 
+        // Validate stock
+        $available = $this->getAvailableStock($product, $variants);
+        if ($available <= 0) {
+            throw new DomainException("{$product->name} is out of stock.");
+        }
+
+        // For authenticated users, use database
+        if (Auth::check()) {
+            $this->addToDatabase($productId, $quantity, $variants, $product, $available);
+            return;
+        }
+
+        // For guests, use session
         $cart = Session::get($this->sessionKey, []);
         
         // Generate a unique ID for this specific combination of product + variants
@@ -94,12 +170,6 @@ class CartService
 
         $currentQuantity = $cart[$rowId]['quantity'] ?? 0;
         $desiredQuantity = $currentQuantity + $quantity;
-
-        $available = $this->getAvailableStock($product, $variants);
-
-        if ($available <= 0) {
-            throw new DomainException("{$product->name} is out of stock.");
-        }
 
         if ($desiredQuantity > $available) {
             throw new DomainException("Only {$available} left for {$product->name}.");
@@ -119,6 +189,41 @@ class CartService
     }
 
     /**
+     * Add to database cart for authenticated users
+     */
+    protected function addToDatabase(int $productId, int $quantity, array $variants, Product $product, int $available): void
+    {
+        $cart = $this->getOrCreateCart();
+        
+        // Find existing cart item with same product and variants
+        $cartItem = $cart->items()
+            ->where('product_id', $productId)
+            ->get()
+            ->first(function ($item) use ($variants) {
+                return $item->variants == $variants;
+            });
+
+        if ($cartItem) {
+            $newQuantity = $cartItem->quantity + $quantity;
+            if ($newQuantity > $available) {
+                throw new DomainException("Only {$available} left for {$product->name}.");
+            }
+            $cartItem->update(['quantity' => $newQuantity]);
+        } else {
+            if ($quantity > $available) {
+                throw new DomainException("Only {$available} left for {$product->name}.");
+            }
+            $price = $this->calculatePrice($product, $variants);
+            $cart->items()->create([
+                'product_id' => $productId,
+                'variants' => $variants,
+                'quantity' => $quantity,
+                'price' => $price,
+            ]);
+        }
+    }
+
+    /**
      * Update the quantity of a product in the cart.
      *
      * @param string $rowId
@@ -127,12 +232,19 @@ class CartService
      */
     public function update(string $rowId, int $quantity): void
     {
-        $cart = Session::get($this->sessionKey, []);
-
         if ($quantity <= 0) {
             $this->remove($rowId);
             return;
         }
+
+        // For authenticated users, use database
+        if (Auth::check()) {
+            $this->updateInDatabase($rowId, $quantity);
+            return;
+        }
+
+        // For guests, use session
+        $cart = Session::get($this->sessionKey, []);
 
         if (isset($cart[$rowId])) {
             $cartItem = $cart[$rowId];
@@ -149,6 +261,35 @@ class CartService
     }
 
     /**
+     * Update cart item in database
+     */
+    protected function updateInDatabase(string $rowId, int $quantity): void
+    {
+        $items = $this->getItemsFromDatabase();
+        $item = $items->firstWhere('id', $rowId);
+        
+        if (!$item) {
+            return;
+        }
+
+        $cart = $this->getOrCreateCart();
+        $cartItem = $cart->items()
+            ->where('product_id', $item->product_id)
+            ->get()
+            ->first(function ($ci) use ($item) {
+                return $ci->variants == $item->variants;
+            });
+
+        if ($cartItem) {
+            $available = $this->getAvailableStock($item->product, $item->variants);
+            if ($quantity > $available) {
+                throw new DomainException("Only {$available} left for {$item->product->name}.");
+            }
+            $cartItem->update(['quantity' => $quantity]);
+        }
+    }
+
+    /**
      * Remove a product from the cart.
      *
      * @param string $rowId
@@ -156,6 +297,13 @@ class CartService
      */
     public function remove(string $rowId): void
     {
+        // For authenticated users, use database
+        if (Auth::check()) {
+            $this->removeFromDatabase($rowId);
+            return;
+        }
+
+        // For guests, use session
         $cart = Session::get($this->sessionKey, []);
 
         if (isset($cart[$rowId])) {
@@ -165,12 +313,70 @@ class CartService
     }
 
     /**
+     * Remove cart item from database
+     */
+    protected function removeFromDatabase(string $rowId): void
+    {
+        $items = $this->getItemsFromDatabase();
+        $item = $items->firstWhere('id', $rowId);
+        
+        if (!$item) {
+            return;
+        }
+
+        $cart = $this->getOrCreateCart();
+        $cart->items()
+            ->where('product_id', $item->product_id)
+            ->get()
+            ->first(function ($ci) use ($item) {
+                return $ci->variants == $item->variants;
+            })?->delete();
+    }
+
+    /**
      * Clear the entire cart.
      *
      * @return void
      */
     public function clear(): void
     {
+        if (Auth::check()) {
+            $cart = $this->getOrCreateCart();
+            $cart->items()->delete();
+            return;
+        }
+
+        Session::forget($this->sessionKey);
+    }
+
+    /**
+     * Merge session cart into database cart on login
+     */
+    public function mergeSessionCart(): void
+    {
+        if (!Auth::check()) {
+            return;
+        }
+
+        $sessionCart = Session::get($this->sessionKey, []);
+        if (empty($sessionCart)) {
+            return;
+        }
+
+        foreach ($sessionCart as $item) {
+            try {
+                $this->add(
+                    $item['product_id'],
+                    $item['quantity'],
+                    $item['variants'] ?? []
+                );
+            } catch (\Exception $e) {
+                // Skip items that can't be added (out of stock, etc.)
+                continue;
+            }
+        }
+
+        // Clear session cart after merging
         Session::forget($this->sessionKey);
     }
 
@@ -191,6 +397,11 @@ class CartService
      */
     public function count(): int
     {
+        if (Auth::check()) {
+            $cart = $this->getOrCreateCart();
+            return $cart->items()->sum('quantity');
+        }
+
         $cart = Session::get($this->sessionKey, []);
         return array_sum(array_column($cart, 'quantity'));
     }
@@ -240,6 +451,4 @@ class CartService
 
         return max($available, 0);
     }
-
-    // Database syncing removed; cart is session-only.
 }

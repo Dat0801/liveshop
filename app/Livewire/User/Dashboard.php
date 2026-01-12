@@ -15,7 +15,7 @@ class Dashboard extends Component
         $user = Auth::user();
         return [
             'total_orders' => $user->orders()->count(),
-            'total_spent' => $user->orders()->sum('total_amount'),
+            'total_spent' => $user->orders()->sum('total'),
             'pending_orders' => $user->orders()->where('status', 'pending')->count(),
             'addresses_count' => $user->addresses()->count(),
         ];

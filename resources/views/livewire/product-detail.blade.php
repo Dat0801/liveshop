@@ -135,20 +135,24 @@
                             <button 
                                 type="button"
                                 wire:click="decrementQuantity"
-                                    class="w-10 h-10 rounded-lg border border-gray-300 hover:bg-gray-100 flex items-center justify-center transition-colors">
+                                wire:loading.attr="disabled"
+                                class="w-10 h-10 rounded-lg border border-gray-300 hover:bg-gray-100 flex items-center justify-center transition-colors">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
                                 </svg>
                             </button>
                             <input 
                                 type="number" 
-                                    wire:model.live="quantity"
+                                id="quantity-input"
+                                value="{{ $quantity }}"
+                                wire:change="updateQuantity($event.target.value)"
                                 min="1"
                                 class="w-20 text-center border border-gray-300 rounded-lg py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-semibold">
                             <button 
                                 type="button"
                                 wire:click="incrementQuantity"
-                                    class="w-10 h-10 rounded-lg border border-gray-300 hover:bg-gray-100 flex items-center justify-center transition-colors">
+                                wire:loading.attr="disabled"
+                                class="w-10 h-10 rounded-lg border border-gray-300 hover:bg-gray-100 flex items-center justify-center transition-colors">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                                 </svg>

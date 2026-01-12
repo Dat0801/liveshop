@@ -55,6 +55,11 @@ class ProductDetail extends Component
         }
     }
 
+    public function updateQuantity($value)
+    {
+        $this->quantity = max(1, (int)$value);
+    }
+
     public function updatedQuantity($value)
     {
         if ($value < 1) {

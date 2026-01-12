@@ -124,6 +124,50 @@
                         @endif
                     </div>
 
+                    <!-- Shipping Methods -->
+                    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                        <h2 class="text-xl font-semibold mb-4">Shipping Method</h2>
+                        
+                        @if($available_shipping_methods && $available_shipping_methods->count() > 0)
+                            <div class="space-y-3">
+                                @foreach($available_shipping_methods as $method)
+                                    <label class="flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all"
+                                           :class="selected_shipping_method_id === {{ $method->id }} ? 'border-primary-500 bg-primary-50' : 'border-gray-200 hover:border-gray-300'">
+                                        <input type="radio" 
+                                               wire:model.live="selected_shipping_method_id" 
+                                               value="{{ $method->id }}" 
+                                               class="mr-4">
+                                        <div class="flex-1">
+                                            <div class="font-semibold text-gray-900">{{ $method->name }}</div>
+                                            @if($method->description)
+                                                <div class="text-sm text-gray-600">{{ $method->description }}</div>
+                                            @endif
+                                            @if($method->processing_days_min && $method->processing_days_max)
+                                                <div class="text-xs text-gray-500 mt-1">
+                                                    Delivery: {{ $method->processing_days_min }}-{{ $method->processing_days_max }} days
+                                                </div>
+                                            @endif
+                                        </div>
+                                        <div class="text-right">
+                                            @php
+                                                $rate = $method->calculateRate($subtotal, 0);
+                                            @endphp
+                                            @if($rate == 0)
+                                                <span class="font-semibold text-green-600">FREE</span>
+                                            @else
+                                                <span class="font-semibold text-gray-900">${{ number_format($rate, 2) }}</span>
+                                            @endif
+                                        </div>
+                                    </label>
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="text-center py-6 bg-gray-50 rounded-lg">
+                                <p class="text-gray-600">No shipping methods available for your location.</p>
+                            </div>
+                        @endif
+                    </div>
+
                     <!-- Order Notes -->
                     <div class="bg-white rounded-lg shadow-md p-6">
                         <h2 class="text-xl font-semibold mb-4">Order Notes (Optional)</h2>
@@ -148,6 +192,39 @@
                                 @endforeach
                             </div>
 
+                            <!-- Coupon Section -->
+                            @if(!$coupon_applied)
+                                <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Promo Code</label>
+                                    <div class="flex gap-2">
+                                        <input type="text" 
+                                               wire:model="coupon_code" 
+                                               placeholder="Enter coupon code"
+                                               class="input flex-1">
+                                        <button type="button"
+                                                wire:click="applyCoupon"
+                                                class="btn btn-secondary px-4">
+                                            Apply
+                                        </button>
+                                    </div>
+                                    @if($coupon_error)
+                                        <p class="text-red-500 text-sm mt-2">{{ $coupon_error }}</p>
+                                    @endif
+                                </div>
+                            @else
+                                <div class="mb-4 p-4 bg-green-50 rounded-lg border border-green-200">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-sm font-medium text-green-800">Coupon Applied</span>
+                                        <button type="button"
+                                                wire:click="removeCoupon"
+                                                class="text-xs text-green-600 hover:text-green-800">
+                                            Remove
+                                        </button>
+                                    </div>
+                                    <p class="text-sm text-green-700 font-semibold">{{ $coupon_code }}</p>
+                                </div>
+                            @endif
+
                             <div class="border-t pt-4 space-y-2">
                                 <div class="flex justify-between">
                                     <span class="text-gray-600">Subtotal</span>
@@ -167,6 +244,12 @@
                                         @endif
                                     </span>
                                 </div>
+                                @if($discount > 0)
+                                    <div class="flex justify-between text-green-600">
+                                        <span>Discount</span>
+                                        <span class="font-semibold">-${{ number_format($discount, 2) }}</span>
+                                    </div>
+                                @endif
                                 @if($subtotal < 100 && $shipping > 0)
                                     <p class="text-xs text-gray-500">Add ${{ number_format(100 - $subtotal, 2) }} more for free shipping!</p>
                                 @endif
