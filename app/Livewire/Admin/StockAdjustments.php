@@ -8,7 +8,10 @@ use App\Models\ProductVariant;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Layout;
+use Carbon\Carbon;
 
+#[Layout('components.layouts.admin')]
 class StockAdjustments extends Component
 {
     use WithPagination;
@@ -17,13 +20,14 @@ class StockAdjustments extends Component
     public $product_id = '';
     public $product_variant_id = '';
     public $quantity_change = 0;
-    public $type = 'adjust';
+    public $type = 'addition';
     public $reason = '';
     public $notes = '';
 
     public $search = '';
     public $typeFilter = '';
-    public $productFilter = '';
+    public $reasonFilter = '';
+    public $dateFilter = '30';
 
     protected function rules()
     {
@@ -31,10 +35,15 @@ class StockAdjustments extends Component
             'product_id' => 'required|exists:products,id',
             'product_variant_id' => 'nullable|exists:product_variants,id',
             'quantity_change' => 'required|integer',
-            'type' => 'required|in:receive,adjust,damage,return,sale',
+            'type' => 'required|in:addition,subtraction,return',
             'reason' => 'required|string|max:255',
             'notes' => 'nullable|string',
         ];
+    }
+
+    public function clearFilters()
+    {
+        $this->reset(['search', 'typeFilter', 'reasonFilter', 'dateFilter']);
     }
 
     public function openCreateModal()
@@ -98,13 +107,69 @@ class StockAdjustments extends Component
             'reason',
             'notes',
         ]);
-        $this->type = 'adjust';
+        $this->type = 'addition';
+    }
+
+    public function getStatistics()
+    {
+        $days = intval($this->dateFilter);
+        $startDate = Carbon::now()->subDays($days);
+        
+        // Total adjustments in period
+        $totalAdjustments = StockAdjustment::where('created_at', '>=', $startDate)->count();
+        
+        // Total additions
+        $totalAdditions = StockAdjustment::where('created_at', '>=', $startDate)
+            ->where('quantity_change', '>', 0)
+            ->count();
+        
+        // Total subtractions
+        $totalSubtractions = StockAdjustment::where('created_at', '>=', $startDate)
+            ->where('quantity_change', '<', 0)
+            ->count();
+        
+        // Calculate percentage changes from previous period
+        $prevStartDate = Carbon::now()->subDays($days * 2);
+        $prevEndDate = Carbon::now()->subDays($days);
+        
+        $prevTotalAdjustments = StockAdjustment::whereBetween('created_at', [$prevStartDate, $prevEndDate])->count();
+        $prevTotalAdditions = StockAdjustment::whereBetween('created_at', [$prevStartDate, $prevEndDate])
+            ->where('quantity_change', '>', 0)->count();
+        $prevTotalSubtractions = StockAdjustment::whereBetween('created_at', [$prevStartDate, $prevEndDate])
+            ->where('quantity_change', '<', 0)->count();
+        
+        $adjustmentsChange = $prevTotalAdjustments > 0 
+            ? round((($totalAdjustments - $prevTotalAdjustments) / $prevTotalAdjustments) * 100) 
+            : 0;
+        $additionsChange = $prevTotalAdditions > 0 
+            ? round((($totalAdditions - $prevTotalAdditions) / $prevTotalAdditions) * 100) 
+            : 0;
+        $subtractionsChange = $prevTotalSubtractions > 0 
+            ? round((($totalSubtractions - $prevTotalSubtractions) / $prevTotalSubtractions) * 100) 
+            : 0;
+        
+        return [
+            'total_adjustments' => $totalAdjustments,
+            'total_additions' => $totalAdditions,
+            'total_subtractions' => $totalSubtractions,
+            'adjustments_change' => $adjustmentsChange,
+            'additions_change' => $additionsChange,
+            'subtractions_change' => $subtractionsChange,
+        ];
     }
 
     public function render()
     {
-        $query = StockAdjustment::with(['product', 'variant', 'admin']);
+        $query = StockAdjustment::with(['product', 'variant', 'admin'])
+            ->select('stock_adjustments.*');
 
+        // Date filter
+        if ($this->dateFilter) {
+            $days = intval($this->dateFilter);
+            $query->where('created_at', '>=', Carbon::now()->subDays($days));
+        }
+
+        // Search filter
         if ($this->search) {
             $query->whereHas('product', function ($q) {
                 $q->where('name', 'like', '%' . $this->search . '%')
@@ -112,21 +177,30 @@ class StockAdjustments extends Component
             });
         }
 
+        // Type filter
         if ($this->typeFilter) {
-            $query->where('type', $this->typeFilter);
+            if ($this->typeFilter === 'addition') {
+                $query->where('quantity_change', '>', 0);
+            } elseif ($this->typeFilter === 'subtraction') {
+                $query->where('quantity_change', '<', 0);
+            } elseif ($this->typeFilter === 'return') {
+                $query->where('type', 'return');
+            }
         }
 
-        if ($this->productFilter) {
-            $query->where('product_id', $this->productFilter);
+        // Reason filter
+        if ($this->reasonFilter) {
+            $query->where('reason', 'like', '%' . $this->reasonFilter . '%');
         }
 
-        $adjustments = $query->orderByDesc('created_at')->paginate(20);
+        $adjustments = $query->orderByDesc('created_at')->paginate(10);
         $products = Product::all();
+        $statistics = $this->getStatistics();
 
         return view('livewire.admin.stock-adjustments', [
             'adjustments' => $adjustments,
             'products' => $products,
-        ])->layout('components.layouts.admin', [
+            'statistics' => $statistics,
             'header' => 'Stock Adjustments',
         ]);
     }

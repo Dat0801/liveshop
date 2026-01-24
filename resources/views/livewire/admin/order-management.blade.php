@@ -1,25 +1,63 @@
 <div>
-    <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-bold">Order Management</h2>
+    <!-- Breadcrumb -->
+    <div class="mb-6">
+        <nav class="text-sm breadcrumb">
+            <a href="#" class="text-gray-600 hover:text-gray-900">Admin</a>
+            <span class="text-gray-400 mx-2">›</span>
+            <span class="text-gray-900 font-medium">Orders Management</span>
+        </nav>
     </div>
 
-    <!-- Filters -->
-    <div class="bg-white rounded-lg shadow-md p-4 mb-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
+    <!-- Header Section -->
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h2 class="text-3xl font-bold text-gray-900">Orders Management</h2>
+            <p class="text-gray-600 text-sm mt-1">Review and process customer orders across all channels.</p>
+        </div>
+        <div class="flex gap-3">
+            <button class="flex items-center gap-2 px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m4-3H8m7-9H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2V7a2 2 0 00-2-2z" />
+                </svg>
+                Export CSV
+            </button>
+            <button class="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition font-medium">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Create Order
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div class="flex flex-col md:flex-row gap-4 items-end justify-between">
+            <!-- Search Box -->
+            <div class="flex-1">
                 <input type="text" 
                        wire:model.live.debounce.300ms="search"
-                       placeholder="Search orders..." 
-                       class="input">
+                       placeholder="Search orders, customers, IDs..." 
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
             </div>
-            <div>
-                <select wire:model.live="statusFilter" class="input">
-                    <option value="">All Status</option>
+
+            <!-- Filter Dropdowns -->
+            <div class="flex gap-3">
+                <select wire:model.live="statusFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                    <option value="">All Statuses</option>
                     <option value="pending">Pending</option>
                     <option value="processing">Processing</option>
                     <option value="shipped">Shipped</option>
                     <option value="delivered">Delivered</option>
                     <option value="cancelled">Cancelled</option>
+                </select>
+
+                <select class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                    <option>All Payments</option>
+                </select>
+
+                <select class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                    <option>Last 30 Days</option>
                 </select>
             </div>
         </div>
@@ -27,73 +65,88 @@
 
     <!-- Orders Table -->
     <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <!-- Table Info -->
+        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <p class="text-sm text-gray-600">Showing <span class="font-semibold">{{ count($orders) }}</span> of <span class="font-semibold">{{ $orders->total() }}</span> orders</p>
+        </div>
+
         <div class="overflow-x-auto">
             <table class="min-w-full">
-                <thead class="bg-gray-50">
+                <thead class="bg-gray-50 border-b border-gray-200">
                     <tr>
-                        <th class="text-left py-3 px-4">Order #</th>
-                        <th class="text-left py-3 px-4">Customer</th>
-                        <th class="text-center py-3 px-4">Total</th>
-                        <th class="text-center py-3 px-4">Status</th>
-                        <th class="text-center py-3 px-4">Date</th>
-                        <th class="text-center py-3 px-4">Actions</th>
+                        <th class="text-left py-4 px-6 font-semibold text-gray-700 text-sm uppercase tracking-wide">Order ID</th>
+                        <th class="text-left py-4 px-6 font-semibold text-gray-700 text-sm uppercase tracking-wide">Customer</th>
+                        <th class="text-left py-4 px-6 font-semibold text-gray-700 text-sm uppercase tracking-wide">Date</th>
+                        <th class="text-left py-4 px-6 font-semibold text-gray-700 text-sm uppercase tracking-wide">Total</th>
+                        <th class="text-left py-4 px-6 font-semibold text-gray-700 text-sm uppercase tracking-wide">Payment</th>
+                        <th class="text-left py-4 px-6 font-semibold text-gray-700 text-sm uppercase tracking-wide">Status</th>
+                        <th class="text-center py-4 px-6 font-semibold text-gray-700 text-sm uppercase tracking-wide">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($orders as $order)
-                        <tr class="border-b hover:bg-gray-50">
-                            <td class="py-3 px-4">
-                                <span class="font-semibold text-primary-600">{{ $order->order_number }}</span>
+                        <tr class="border-b hover:bg-gray-50 transition">
+                            <td class="py-4 px-6">
+                                <span class="font-semibold text-orange-600 text-sm">#{{ $order->order_number }}</span>
                             </td>
-                            <td class="py-3 px-4">
+                            <td class="py-4 px-6">
                                 <div>
-                                    <p class="font-semibold">{{ $order->billing_name }}</p>
-                                    <p class="text-sm text-gray-600">{{ $order->billing_email }}</p>
+                                    <p class="font-medium text-gray-900 text-sm">{{ $order->billing_name }}</p>
                                 </div>
                             </td>
-                            <td class="py-3 px-4 text-center font-semibold">
-                                ${{ number_format($order->total, 2) }}
-                            </td>
-                            <td class="py-3 px-4 text-center">
-                                <select 
-                                    wire:change="updateOrderStatus({{ $order->id }}, $event.target.value)"
-                                    class="px-2 py-1 rounded-full text-sm border-0 focus:ring-2 focus:ring-primary-500
-                                        {{ $order->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
-                                        {{ $order->status === 'processing' ? 'bg-blue-100 text-blue-800' : '' }}
-                                        {{ $order->status === 'shipped' ? 'bg-purple-100 text-purple-800' : '' }}
-                                        {{ $order->status === 'delivered' ? 'bg-green-100 text-green-800' : '' }}
-                                        {{ $order->status === 'cancelled' ? 'bg-red-100 text-red-800' : '' }}">
-                                    <option value="pending" {{ $order->status === 'pending' ? 'selected' : '' }}>Pending</option>
-                                    <option value="processing" {{ $order->status === 'processing' ? 'selected' : '' }}>Processing</option>
-                                    <option value="shipped" {{ $order->status === 'shipped' ? 'selected' : '' }}>Shipped</option>
-                                    <option value="delivered" {{ $order->status === 'delivered' ? 'selected' : '' }}>Delivered</option>
-                                    <option value="cancelled" {{ $order->status === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                                </select>
-                            </td>
-                            <td class="py-3 px-4 text-center text-sm text-gray-600">
+                            <td class="py-4 px-6 text-sm text-gray-700">
                                 {{ $order->created_at->format('M d, Y') }}
                             </td>
-                            <td class="py-3 px-4 text-center">
-                                <button wire:click="viewOrder({{ $order->id }})" class="text-blue-600 hover:text-blue-800">
-                                    <svg class="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            <td class="py-4 px-6 font-semibold text-gray-900">
+                                ${{ number_format($order->total, 2) }}
+                            </td>
+                            <td class="py-4 px-6 text-sm">
+                                <span class="flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4z" />
+                                        <path fill-rule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6z" clip-rule="evenodd" />
+                                    </svg>
+                                    Visa
+                                </span>
+                            </td>
+                            <td class="py-4 px-6">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold
+                                    {{ $order->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
+                                    {{ $order->status === 'processing' ? 'bg-blue-100 text-blue-800' : '' }}
+                                    {{ $order->status === 'shipped' ? 'bg-purple-100 text-purple-800' : '' }}
+                                    {{ $order->status === 'delivered' ? 'bg-green-100 text-green-800' : '' }}
+                                    {{ $order->status === 'cancelled' ? 'bg-red-100 text-red-800' : '' }}">
+                                    {{ ucfirst($order->status) }}
+                                </span>
+                            </td>
+                            <td class="py-4 px-6 text-center">
+                                <button wire:click="viewOrder({{ $order->id }})" class="inline-flex items-center px-3 py-1 text-orange-600 hover:text-orange-700 font-medium text-sm">
+                                    View Details
+                                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                                     </svg>
                                 </button>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center py-8 text-gray-500">No orders found</td>
+                            <td colspan="7" class="text-center py-8 text-gray-500">No orders found</td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
 
-        <!-- Pagination -->
-        <div class="p-4 border-t">
-            {{ $orders->links() }}
+        <!-- Pagination Section -->
+        <div class="px-6 py-4 border-t border-gray-200">
+            <div class="flex items-center justify-between">
+                <div class="text-sm text-gray-600">
+                    Showing page with results
+                </div>
+                <div class="flex gap-2 items-center">
+                    {{ $orders->links() }}
+                </div>
+            </div>
         </div>
     </div>
 
