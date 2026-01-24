@@ -24,6 +24,7 @@ class CategoryManagement extends Component
     public $is_active = true;
 
     public $search = '';
+    public $statusFilter = 'all';
 
     protected function rules()
     {
@@ -142,7 +143,7 @@ class CategoryManagement extends Component
 
     public function render()
     {
-        $query = Category::query();
+        $query = Category::withCount('products');
 
         if ($this->search) {
             $query->where(function ($q) {
@@ -151,10 +152,26 @@ class CategoryManagement extends Component
             });
         }
 
-        $categories = $query->latest()->paginate(15);
+        if ($this->statusFilter === 'active') {
+            $query->where('is_active', true);
+        } elseif ($this->statusFilter === 'inactive') {
+            $query->where('is_active', false);
+        }
+
+        $categories = $query->latest()->paginate(10);
+
+        // Calculate statistics
+        $totalCategories = Category::count();
+        $activeCategories = Category::where('is_active', true)->count();
+        $totalItemsLinked = Category::withCount('products')
+            ->get()
+            ->sum('products_count');
 
         return view('livewire.admin.category-management', [
             'categories' => $categories,
+            'totalCategories' => $totalCategories,
+            'activeCategories' => $activeCategories,
+            'totalItemsLinked' => $totalItemsLinked,
         ])->layout('components.layouts.admin', [
             'header' => 'Categories',
         ]);

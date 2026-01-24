@@ -15,9 +15,8 @@ class Dashboard extends Component
         $user = Auth::user();
         return [
             'total_orders' => $user->orders()->count(),
-            'total_spent' => $user->orders()->sum('total'),
-            'pending_orders' => $user->orders()->where('status', 'pending')->count(),
-            'addresses_count' => $user->addresses()->count(),
+            'total_points' => $user->points ?? 0,
+            'active_vouchers' => $user->coupons()->where('is_active', true)->count(),
         ];
     }
 
@@ -25,6 +24,6 @@ class Dashboard extends Component
     {
         return view('livewire.user.dashboard', [
             'stats' => $this->stats,
-        ]);
+        ])->layout('components.layouts.app');
     }
 }

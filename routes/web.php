@@ -1,5 +1,6 @@
 <?php
 
+use App\Livewire\HomePage;
 use App\Livewire\ProductList;
 use App\Livewire\ProductDetail;
 use App\Livewire\CartPage;
@@ -39,9 +40,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Homepage
-Route::get('/', function () {
-    return redirect()->route('products.index');
-});
+Route::get('/', HomePage::class)->name('home');
 
 // Auth Routes
 Route::middleware('guest')->group(function () {

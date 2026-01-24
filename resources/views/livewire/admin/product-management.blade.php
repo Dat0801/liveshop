@@ -1,151 +1,254 @@
-<div>
-    <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-bold">Product Management</h2>
-        <div class="flex gap-3">
-            <button wire:click="$toggle('showTrashed')" 
-                    class="btn {{ $showTrashed ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-700' }}">
-                <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                {{ $showTrashed ? 'Show Active' : 'Show Deleted' }}
-            </button>
-            <button wire:click="openCreateModal" class="btn btn-primary">
-                <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<div class="p-6">
+    <!-- Header -->
+    <div class="mb-6">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Product Management</h1>
+                <p class="text-gray-600 mt-1">Manage your inventory, pricing, and global stock levels.</p>
+            </div>
+            <button wire:click="openCreateModal" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold flex items-center gap-2 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
-                Add Product
+                Add New Product
             </button>
         </div>
     </div>
 
-    <!-- Filters -->
-    <div class="bg-white rounded-lg shadow-md p-4 mb-6">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <!-- Total Products -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-start justify-between">
+                <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                            </svg>
+                        </div>
+                        <span class="text-green-600 text-sm font-semibold">+{{ number_format($productGrowth, 1) }}%</span>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-1">Total Products</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ number_format($totalProducts) }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Low Stock Items -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-start justify-between">
+                <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        <span class="text-orange-600 text-sm font-semibold">Requires attention</span>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-1">Low Stock Items</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ $lowStockItems }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Out of Stock -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-start justify-between">
+                <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <span class="text-red-600 text-sm font-semibold">+{{ number_format($stockDecline) }}% this week</span>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-1">Out of Stock</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ $outOfStockItems }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+        <div class="flex flex-col md:flex-row gap-4 items-center">
+            <!-- Search -->
+            <div class="flex-1 relative">
+                <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
                 <input type="text" 
                        wire:model.live.debounce.300ms="search"
-                       placeholder="Search products..." 
-                       class="input">
+                       placeholder="Search products by name, SKU, or tag..." 
+                       class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
             </div>
-            <div>
-                <select wire:model.live="categoryFilter" class="input">
+            
+            <!-- Category Filter -->
+            <div class="w-full md:w-48">
+                <select wire:model.live="categoryFilter" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
                     <option value="">All Categories</option>
                     @foreach($categories as $cat)
                         <option value="{{ $cat->id }}">{{ $cat->name }}</option>
                     @endforeach
                 </select>
             </div>
+
+            <!-- Status Filter -->
+            <div class="w-full md:w-48">
+                <select wire:model.live="statusFilter" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="draft">Draft</option>
+                    <option value="low_stock">Low Stock</option>
+                    <option value="out_of_stock">Out of Stock</option>
+                </select>
+            </div>
+
+            <!-- Filter Button -->
+            <button class="w-full md:w-auto px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2">
+                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+            </button>
         </div>
     </div>
 
     <!-- Products Table -->
-    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="min-w-full">
+            <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="text-left py-3 px-4">Product</th>
-                        <th class="text-left py-3 px-4">Category</th>
-                        <th class="text-center py-3 px-4">Price</th>
-                        <th class="text-center py-3 px-4">Stock</th>
-                        <th class="text-center py-3 px-4">Status</th>
-                        <th class="text-center py-3 px-4">Featured</th>
-                        <th class="text-center py-3 px-4">Actions</th>
+                        <th class="w-12 px-6 py-3">
+                            <input type="checkbox" class="rounded border-gray-300">
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Thumbnail
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Product & SKU
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Category
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Price
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Stock
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                        </th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="bg-white divide-y divide-gray-200">
                     @forelse($products as $product)
-                        <tr class="border-b hover:bg-gray-50 {{ $showTrashed ? 'bg-red-50' : '' }}">
-                            <td class="py-3 px-4">
-                                <div>
-                                    <p class="font-semibold {{ $showTrashed ? 'line-through text-gray-500' : '' }}">
-                                        {{ $product->name }}
-                                    </p>
-                                    <p class="text-sm text-gray-600">SKU: {{ $product->sku }}</p>
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4">
+                                <input type="checkbox" class="rounded border-gray-300">
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="w-12 h-12 bg-gradient-to-br {{ $loop->index % 3 == 0 ? 'from-green-400 to-green-600' : ($loop->index % 3 == 1 ? 'from-teal-400 to-teal-600' : 'from-orange-400 to-orange-600') }} rounded-lg flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                    </svg>
                                 </div>
                             </td>
-                            <td class="py-3 px-4">{{ $product->category->name }}</td>
-                            <td class="py-3 px-4 text-center">
-                                ${{ number_format($product->getCurrentPrice(), 2) }}
-                                @if($product->hasDiscount())
-                                    <br><span class="text-xs text-gray-500 line-through">${{ number_format($product->base_price, 2) }}</span>
-                                @endif
+                            <td class="px-6 py-4">
+                                <div>
+                                    <p class="font-semibold text-gray-900">{{ $product->name }}</p>
+                                    <p class="text-sm text-gray-500">SKU: {{ $product->sku }}</p>
+                                </div>
                             </td>
-                            <td class="py-3 px-4 text-center">
-                                <span class="px-2 py-1 rounded-full text-sm
-                                    {{ $product->stock_quantity === 0 ? 'bg-red-100 text-red-800' : ($product->stock_quantity <= 10 ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800') }}">
-                                    {{ $product->stock_quantity }}
-                                </span>
+                            <td class="px-6 py-4">
+                                <span class="text-gray-700">{{ $product->category->name }}</span>
                             </td>
-                            <td class="py-3 px-4 text-center">
-                                @if(!$showTrashed)
-                                    <button wire:click="toggleStatus({{ $product->id }})" 
-                                            class="px-3 py-1 rounded-full text-sm font-medium transition-colors
-                                                {{ $product->is_active ? 'bg-green-100 text-green-800 hover:bg-green-200' : 'bg-red-100 text-red-800 hover:bg-red-200' }}">
-                                        {{ $product->is_active ? 'Active' : 'Inactive' }}
-                                    </button>
+                            <td class="px-6 py-4">
+                                <span class="font-semibold text-gray-900">${{ number_format($product->getCurrentPrice(), 2) }}</span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-900">{{ $product->stock_quantity }} units</p>
+                                    @if($product->stock_quantity === 0)
+                                        <div class="mt-1">
+                                            <span class="inline-block px-2 py-0.5 text-xs font-semibold text-red-700 bg-red-100 rounded">Out of stock</span>
+                                        </div>
+                                    @elseif($product->stock_quantity <= 10)
+                                        <div class="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                                            <div class="bg-orange-500 h-1.5 rounded-full" style="width: {{ ($product->stock_quantity / 20) * 100 }}%"></div>
+                                        </div>
+                                    @else
+                                        <div class="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                                            <div class="bg-orange-500 h-1.5 rounded-full" style="width: {{ min(($product->stock_quantity / 100) * 100, 100) }}%"></div>
+                                        </div>
+                                    @endif
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                @if($product->stock_quantity === 0)
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700">
+                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 8 8">
+                                            <circle cx="4" cy="4" r="3" />
+                                        </svg>
+                                        Sold Out
+                                    </span>
+                                @elseif(!$product->is_active)
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
+                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 8 8">
+                                            <circle cx="4" cy="4" r="3" />
+                                        </svg>
+                                        Draft
+                                    </span>
+                                @elseif($product->stock_quantity <= 10)
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-50 text-orange-700">
+                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 8 8">
+                                            <circle cx="4" cy="4" r="3" />
+                                        </svg>
+                                        Low stock
+                                    </span>
                                 @else
-                                    <span class="px-2 py-1 rounded-full text-sm bg-gray-100 text-gray-600">
-                                        Deleted
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-50 text-green-700">
+                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 8 8">
+                                            <circle cx="4" cy="4" r="3" />
+                                        </svg>
+                                        Active
                                     </span>
                                 @endif
                             </td>
-                            <td class="py-3 px-4 text-center">
-                                @if(!$showTrashed)
-                                    <button wire:click="toggleFeatured({{ $product->id }})" 
-                                            class="px-3 py-1 rounded-full text-sm font-medium transition-colors
-                                                {{ $product->is_featured ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
-                                        {{ $product->is_featured ? '⭐ Featured' : 'Not Featured' }}
-                                    </button>
-                                @else
-                                    <span class="text-gray-400">-</span>
-                                @endif
-                            </td>
-                            <td class="py-3 px-4 text-center">
-                                @if($showTrashed)
-                                    <button wire:click="restoreProduct({{ $product->id }})" 
-                                            class="text-green-600 hover:text-green-800 mr-3"
-                                            title="Restore Product">
-                                        <svg class="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                        </svg>
-                                    </button>
-                                    <button wire:click="confirmDelete({{ $product->id }})" 
-                                            class="text-red-600 hover:text-red-800"
-                                            title="Permanently Delete">
-                                        <svg class="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                    </button>
-                                @else
-                                    <button wire:click="openEditModal({{ $product->id }})" class="text-blue-600 hover:text-blue-800 mr-3" title="Edit Product">
-                                        <svg class="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-2">
+                                    <button wire:click="openEditModal({{ $product->id }})" 
+                                            class="p-2 text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                                            title="Edit Product">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                         </svg>
                                     </button>
-                                    <a href="{{ route('admin.products.media', ['product' => $product->id]) }}" class="text-green-600 hover:text-green-800 mr-3" title="Manage Images">
-                                        <svg class="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                        </svg>
-                                    </a>
-                                    <a href="{{ route('admin.products.variants', ['product' => $product->id]) }}" class="text-purple-600 hover:text-purple-800 mr-3" title="Manage Variants">
-                                        <svg class="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18" />
-                                        </svg>
-                                    </a>
                                     <button wire:click="confirmDelete({{ $product->id }})" 
-                                            class="text-red-600 hover:text-red-800">
-                                        <svg class="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            class="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                            title="Delete Product">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                         </svg>
                                     </button>
-                                @endif
+                                </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center py-8 text-gray-500">
-                                {{ $showTrashed ? 'No deleted products found' : 'No products found' }}
+                            <td colspan="8" class="px-6 py-12 text-center text-gray-500">
+                                <svg class="w-12 h-12 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                </svg>
+                                <p class="text-lg font-semibold mb-1">No products found</p>
+                                <p class="text-sm">Try adjusting your search or filter criteria</p>
                             </td>
                         </tr>
                     @endforelse
@@ -154,9 +257,18 @@
         </div>
 
         <!-- Pagination -->
-        <div class="p-4 border-t">
-            {{ $products->links() }}
+        @if($products->hasPages())
+        <div class="px-6 py-4 border-t border-gray-200">
+            <div class="flex items-center justify-between">
+                <div class="text-sm text-gray-700">
+                    Showing <span class="font-semibold">{{ $products->firstItem() }}</span> to <span class="font-semibold">{{ $products->lastItem() }}</span> of <span class="font-semibold">{{ $products->total() }}</span> entries
+                </div>
+                <div>
+                    {{ $products->links() }}
+                </div>
+            </div>
         </div>
+        @endif
     </div>
 
     <!-- Product Modal -->

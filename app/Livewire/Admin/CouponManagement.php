@@ -8,6 +8,9 @@ use App\Models\Product;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
+use App\Models\Order;
 
 class CouponManagement extends Component
 {
@@ -34,6 +37,14 @@ class CouponManagement extends Component
 
     public $search = '';
     public $statusFilter = '';
+    public $tab = 'all'; // all|active|scheduled|expired
+
+    // Top stats
+    public $stats = [
+        'active' => 0,
+        'total_usage' => 0,
+        'revenue_saved' => 0.0,
+    ];
 
     protected function rules()
     {
@@ -57,6 +68,12 @@ class CouponManagement extends Component
         }
 
         return $rules;
+    }
+
+    public function setTab(string $tab)
+    {
+        $this->tab = $tab;
+        $this->resetPage();
     }
 
     public function generateCode()
@@ -121,6 +138,32 @@ class CouponManagement extends Component
         }
 
         $this->closeModal();
+    }
+
+    public function exportCsv()
+    {
+        $rows = Coupon::query()->orderBy('created_at', 'desc')->get([
+            'code', 'type', 'value', 'usage_count', 'usage_limit', 'valid_from', 'valid_until', 'is_active'
+        ]);
+
+        $csv = [];
+        $csv[] = implode(',', ['code','type','value','usage_count','usage_limit','valid_from','valid_until','is_active']);
+        foreach ($rows as $r) {
+            $csv[] = implode(',', [
+                $r->code,
+                $r->type,
+                (string) $r->value,
+                (string) ($r->usage_count ?? 0),
+                (string) ($r->usage_limit ?? ''),
+                $r->valid_from ? $r->valid_from->toDateString() : '',
+                $r->valid_until ? $r->valid_until->toDateString() : '',
+                $r->is_active ? '1' : '0',
+            ]);
+        }
+
+        $path = 'exports/coupons-' . now()->format('Ymd-His') . '.csv';
+        Storage::disk('local')->put($path, implode("\n", $csv));
+        session()->flash('message', 'CSV exported to storage/app/' . $path);
     }
 
     public function confirmDelete($id)
@@ -194,14 +237,34 @@ class CouponManagement extends Component
             $query->where('is_active', false);
         }
 
+        // Tab filter logic
+        if ($this->tab === 'active') {
+            $query->valid();
+        } elseif ($this->tab === 'scheduled') {
+            $query->where('is_active', true)->whereNotNull('valid_from')->where('valid_from', '>', now());
+        } elseif ($this->tab === 'expired') {
+            $query->where(function ($q) {
+                $q->whereNotNull('valid_until')->where('valid_until', '<', now())
+                  ->orWhere(function ($qq) {
+                      $qq->whereNotNull('usage_limit')->whereColumn('usage_count', '>=', 'usage_limit');
+                  });
+            });
+        }
+
         $coupons = $query->latest()->paginate(15);
         $categories = Category::all();
         $products = Product::all();
+
+        // Stats
+        $this->stats['active'] = Coupon::valid()->count();
+        $this->stats['total_usage'] = (int) Coupon::sum('usage_count');
+        $this->stats['revenue_saved'] = (float) Order::whereNotNull('coupon_code')->sum('discount_amount');
 
         return view('livewire.admin.coupon-management', [
             'coupons' => $coupons,
             'categories' => $categories,
             'products' => $products,
+            'stats' => $this->stats,
         ])->layout('components.layouts.admin', [
             'header' => 'Coupons',
         ]);

@@ -34,6 +34,7 @@ class ProductManagement extends Component
 
     public $search = '';
     public $categoryFilter = '';
+    public $statusFilter = '';
     public $showTrashed = false;
 
     protected function rules()
@@ -215,12 +216,42 @@ class ProductManagement extends Component
             $query->where('category_id', $this->categoryFilter);
         }
 
-        $products = $query->latest()->paginate(15);
+        if ($this->statusFilter !== '') {
+            if ($this->statusFilter === 'active') {
+                $query->where('is_active', true);
+            } elseif ($this->statusFilter === 'inactive') {
+                $query->where('is_active', false);
+            } elseif ($this->statusFilter === 'draft') {
+                $query->where('is_active', false);
+            } elseif ($this->statusFilter === 'low_stock') {
+                $query->where('stock_quantity', '>', 0)->where('stock_quantity', '<=', 10);
+            } elseif ($this->statusFilter === 'out_of_stock') {
+                $query->where('stock_quantity', 0);
+            }
+        }
+
+        $products = $query->latest()->paginate(10);
         $categories = Category::all();
+
+        // Calculate statistics
+        $totalProducts = Product::count();
+        $lowStockItems = Product::where('stock_quantity', '>', 0)
+                                ->where('stock_quantity', '<=', 10)
+                                ->count();
+        $outOfStockItems = Product::where('stock_quantity', 0)->count();
+        
+        // Calculate percentage changes (mock data - you can implement real tracking)
+        $productGrowth = 2.4; // Example growth percentage
+        $stockDecline = 3; // Example decline percentage
 
         return view('livewire.admin.product-management', [
             'products' => $products,
             'categories' => $categories,
+            'totalProducts' => $totalProducts,
+            'lowStockItems' => $lowStockItems,
+            'outOfStockItems' => $outOfStockItems,
+            'productGrowth' => $productGrowth,
+            'stockDecline' => $stockDecline,
         ])->layout('components.layouts.admin', [
             'header' => 'Products',
         ]);

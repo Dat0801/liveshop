@@ -10,9 +10,19 @@ class CartPage extends Component
 {
     public function render(CartService $cartService)
     {
+        $items = $cartService->getItems();
+        $subtotal = $items->sum('subtotal');
+        $shipping = 0;
+        $taxRate = 0.08;
+        $tax = round($subtotal * $taxRate, 2);
+
         return view('livewire.cart-page', [
-            'cartItems' => $cartService->getItems(),
-            'total' => $cartService->total(),
+            'cartItems' => $items,
+            'subtotal' => $subtotal,
+            'shipping' => $shipping,
+            'tax' => $tax,
+            'taxRate' => $taxRate,
+            'grandTotal' => $subtotal + $shipping + $tax,
         ]);
     }
 
@@ -54,6 +64,12 @@ class CartPage extends Component
     public function remove($rowId, CartService $cartService)
     {
         $cartService->remove($rowId);
+        $this->dispatch('cart-updated');
+    }
+
+    public function clearCart(CartService $cartService)
+    {
+        $cartService->clear();
         $this->dispatch('cart-updated');
     }
 

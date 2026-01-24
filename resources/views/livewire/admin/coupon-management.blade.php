@@ -5,116 +5,146 @@
         </div>
     @endif
 
+    <!-- Header + Actions -->
     <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-bold">Coupon Management</h2>
-        <button wire:click="openCreateModal" class="btn btn-primary">
-            <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-            Add Coupon
-        </button>
+        <div>
+            <h2 class="text-2xl font-bold text-gray-900">Coupons Management</h2>
+            <p class="text-sm text-gray-600 mt-1">Manage and track promotional codes and discounts.</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <button wire:click="exportCsv" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-50 flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14m7-7H5"/></svg>
+                Export CSV
+            </button>
+            <button wire:click="openCreateModal" class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-semibold flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Create Coupon
+            </button>
+        </div>
     </div>
 
-    <!-- Filters -->
-    <div class="bg-white rounded-lg shadow-md p-4 mb-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <input wire:model.live.debounce.300ms="search" type="text" placeholder="Search by code..." class="input">
+    <!-- Stat Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div class="bg-white border border-gray-200 rounded-xl p-5 flex items-center gap-4">
+            <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
             </div>
             <div>
-                <select wire:model.live="statusFilter" class="input">
-                    <option value="">All Status</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                </select>
+                <p class="text-xs text-gray-500 uppercase tracking-wide">Active Coupons</p>
+                <p class="text-xl font-bold text-gray-900">{{ number_format($stats['active']) }}</p>
+            </div>
+        </div>
+        <div class="bg-white border border-gray-200 rounded-xl p-5 flex items-center gap-4">
+            <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6h13v6M9 7V4h13v3M4 4h1M4 10h1M4 16h1"/></svg>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wide">Total Usage</p>
+                <p class="text-xl font-bold text-gray-900">{{ number_format($stats['total_usage']) }}</p>
+            </div>
+        </div>
+        <div class="bg-white border border-gray-200 rounded-xl p-5 flex items-center gap-4">
+            <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-4.418 0-8 1.79-8 4s3.582 4 8 4 8-1.79 8-4-3.582-4-8-4zm0 8v4m0-12V4"/></svg>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wide">Revenue Saved</p>
+                <p class="text-xl font-bold text-gray-900">${{ number_format($stats['revenue_saved'], 2) }}</p>
             </div>
         </div>
     </div>
 
+    <!-- Tabs -->
+    <div class="mb-4">
+        <div class="flex gap-6 text-sm border-b border-gray-200">
+            @php
+                $tabs = ['all' => 'All Coupons','active' => 'Active','scheduled' => 'Scheduled','expired' => 'Expired']
+            @endphp
+            @foreach($tabs as $key => $label)
+                <button wire:click="setTab('{{ $key }}')" class="py-2 -mb-px {{ $tab === $key ? 'text-orange-600 border-b-2 border-orange-500 font-semibold' : 'text-gray-600 hover:text-gray-800' }}">{{ $label }}</button>
+            @endforeach
+        </div>
+    </div>
+
+    <!-- Filters under tabs -->
+    <div class="bg-white rounded-xl border border-gray-200 p-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input wire:model.live.debounce.300ms="search" type="text" placeholder="Search by code..." class="input">
+            <select wire:model.live="statusFilter" class="input">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+            </select>
+        </div>
+    </div>
+
     <!-- Coupons Table -->
-    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div class="overflow-x-auto">
             <table class="min-w-full">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="text-left py-3 px-4">Code</th>
-                        <th class="text-left py-3 px-4">Type</th>
-                        <th class="text-left py-3 px-4">Value</th>
-                        <th class="text-center py-3 px-4">Usage</th>
-                        <th class="text-center py-3 px-4">Valid Period</th>
-                        <th class="text-center py-3 px-4">Status</th>
-                        <th class="text-center py-3 px-4">Actions</th>
+                        <th class="text-left py-3 px-4 text-xs font-semibold text-gray-600">Coupon Code</th>
+                        <th class="text-left py-3 px-4 text-xs font-semibold text-gray-600">Type</th>
+                        <th class="text-left py-3 px-4 text-xs font-semibold text-gray-600">Value</th>
+                        <th class="text-left py-3 px-4 text-xs font-semibold text-gray-600">Start Date</th>
+                        <th class="text-left py-3 px-4 text-xs font-semibold text-gray-600">End Date</th>
+                        <th class="text-left py-3 px-4 text-xs font-semibold text-gray-600">Usage Limit</th>
+                        <th class="text-left py-3 px-4 text-xs font-semibold text-gray-600">Status</th>
+                        <th class="text-center py-3 px-4 text-xs font-semibold text-gray-600">Actions</th>
                     </tr>
                 </thead>
-@forelse ($coupons as $coupon)
-                        <tr class="border-b hover:bg-gray-50">
-                            <td class="py-3 px-4">
-                                <span class="font-mono font-semibold">{{ $coupon->code }}</span>
+                <tbody class="bg-white">
+                    @forelse ($coupons as $coupon)
+                        @php
+                            $limit = $coupon->usage_limit ?? null;
+                            $used = $coupon->usage_count ?? 0;
+                            $percent = $limit ? min(100, intval(($used / max($limit,1)) * 100)) : 0;
+                            $isScheduled = $coupon->is_active && $coupon->valid_from && $coupon->valid_from->isFuture();
+                            $isExpired = ($coupon->valid_until && $coupon->valid_until->isPast()) || ($coupon->usage_limit && $used >= $coupon->usage_limit) || !$coupon->is_active;
+                            $statusLabel = $isScheduled ? 'Scheduled' : ($isExpired ? 'Expired' : 'Active');
+                            $statusColor = $isScheduled ? 'text-yellow-700 bg-yellow-100' : ($isExpired ? 'text-gray-700 bg-gray-200' : 'text-green-700 bg-green-100');
+                        @endphp
+                        <tr class="border-t hover:bg-gray-50">
+                            <td class="py-4 px-4">
+                                <div class="font-semibold text-gray-900">{{ $coupon->code }}</div>
+                                <p class="text-xs text-gray-500">&nbsp;</p>
                             </td>
-                            <td class="py-3 px-4">
-                                <span class="px-2 py-1 text-xs rounded {{ $coupon->type === 'percentage' ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800' }}">
+                            <td class="py-4 px-4">
+                                <span class="px-2 py-1 text-xs rounded-full {{ $coupon->type === 'percentage' ? 'bg-purple-100 text-purple-700' : 'bg-indigo-100 text-indigo-700' }}">
                                     {{ $coupon->type === 'percentage' ? 'Percentage' : 'Fixed Amount' }}
                                 </span>
                             </td>
-                            <td class="py-3 px-4">
-                                <div>
-                                    <span class="font-semibold">
-                                        {{ $coupon->type === 'percentage' ? $coupon->value . '%' : '$' . number_format($coupon->value, 2) }}
-                                    </span>
-                                    @if($coupon->max_discount)
-                                        <p class="text-xs text-gray-500">Max: ${{ number_format($coupon->max_discount, 2) }}</p>
-                                    @endif
+                            <td class="py-4 px-4">
+                                <span class="font-semibold text-gray-900">{{ $coupon->type === 'percentage' ? $coupon->value . '%' : '$' . number_format($coupon->value, 2) }}</span>
+                            </td>
+                            <td class="py-4 px-4 text-sm text-gray-700">{{ $coupon->valid_from ? $coupon->valid_from->format('M d, Y') : '—' }}</td>
+                            <td class="py-4 px-4 text-sm text-gray-700">{{ $coupon->valid_until ? $coupon->valid_until->format('M d, Y') : '—' }}</td>
+                            <td class="py-4 px-4">
+                                <div class="flex items-center gap-3 w-40">
+                                    <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                        <div class="h-2 bg-orange-500" style="width: {{ $percent }}%"></div>
+                                    </div>
+                                    <div class="text-xs text-gray-700 whitespace-nowrap">{{ $used }}{{ $limit ? '/' . $limit : '/∞' }}</div>
                                 </div>
                             </td>
-                            <td class="py-3 px-4 text-center">
-                                <span class="px-2 py-1 rounded-full text-sm 
-                                    {{ ($coupon->usage_limit && $coupon->usage_count >= $coupon->usage_limit) ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800' }}">
-                                    {{ $coupon->usage_count ?? 0 }}
-                                    @if($coupon->usage_limit)
-                                        / {{ $coupon->usage_limit }}
-                                    @else
-                                        / ∞
-                                    @endif
-                                </span>
+                            <td class="py-4 px-4">
+                                <span class="px-2 py-1 rounded-full text-xs font-medium {{ $statusColor }}">{{ $statusLabel }}</span>
                             </td>
-                            <td class="py-3 px-4 text-center text-sm text-gray-600">
-                                @if($coupon->valid_from)
-                                    {{ $coupon->valid_from->format('M d, Y') }}
-                                @else
-                                    —
-                                @endif
-                                <br>
-                                @if($coupon->valid_until)
-                                    {{ $coupon->valid_until->format('M d, Y') }}
-                                @else
-                                    No expiry
-                                @endif
-                            </td>
-                            <td class="py-3 px-4 text-center">
-                                <button wire:click="toggleStatus({{ $coupon->id }})" 
-                                        class="px-3 py-1 rounded-full text-sm font-medium transition-colors
-                                            {{ $coupon->is_active ? 'bg-green-100 text-green-800 hover:bg-green-200' : 'bg-red-100 text-red-800 hover:bg-red-200' }}">
-                                    {{ $coupon->is_active ? 'Active' : 'Inactive' }}
-                                </button>
-                            </td>
-                            <td class="py-3 px-4 text-center">
-                                <button wire:click="openEditModal({{ $coupon->id }})" class="text-blue-600 hover:text-blue-800 mr-3">
-                                    <svg class="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                </button>
-                                <button wire:click="confirmDelete({{ $coupon->id }})" class="text-red-600 hover:text-red-800">
-                                    <svg class="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                </button>
+                            <td class="py-4 px-4 text-center">
+                                <div class="flex items-center justify-center gap-3">
+                                    <button title="Edit" wire:click="openEditModal({{ $coupon->id }})" class="text-gray-600 hover:text-orange-600">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                    </button>
+                                    <button title="Delete" wire:click="confirmDelete({{ $coupon->id }})" class="text-gray-600 hover:text-red-600">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center py-8 text-gray-500">
-                                No coupons found
-                            </td>
+                            <td colspan="8" class="text-center py-8 text-gray-500">No coupons found</td>
                         </tr>
                     @endforelse
                 </tbody>

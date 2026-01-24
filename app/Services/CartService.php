@@ -65,6 +65,7 @@ class CartService
             }
 
             // Validate provided variants exist
+            $product_variant_id = null;
             if (isset($item['variants']) && is_array($item['variants'])) {
                 foreach ($item['variants'] as $type => $value) {
                     $variant = $product->variants
@@ -76,6 +77,7 @@ class CartService
                         $this->remove($rowId);
                         return null;
                     }
+                    $product_variant_id = $variant->id;
                 }
             }
 
@@ -86,6 +88,8 @@ class CartService
                 'id' => $rowId, // Use the rowId as the unique identifier for the cart item
                 'product_id' => $product->id,
                 'product' => $product,
+                'product_variant_id' => $product_variant_id,
+                'variant' => null,
                 'variants' => $item['variants'] ?? [],
                 'quantity' => $item['quantity'],
                 'price' => $price,
@@ -128,6 +132,8 @@ class CartService
                 'id' => $rowId,
                 'product_id' => $product->id,
                 'product' => $product,
+                'product_variant_id' => null,
+                'variant' => null,
                 'variants' => $variants,
                 'quantity' => $item->quantity,
                 'price' => $price,

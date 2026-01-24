@@ -29,8 +29,12 @@ class ShippingMethods extends Component
     public $processing_days_max = 5;
     public $is_active = true;
     public $display_order = 0;
+    public $icon = 'truck';
+    public $delivery_text = '';
 
     public $search = '';
+    public $statusFilter = 'all';
+    public $regionFilter = 'all';
 
     protected function rules()
     {
@@ -48,6 +52,8 @@ class ShippingMethods extends Component
             'processing_days_max' => 'required|integer|min:0|gte:processing_days_min',
             'is_active' => 'boolean',
             'display_order' => 'integer',
+            'icon' => 'nullable|string|max:50',
+            'delivery_text' => 'nullable|string|max:255',
         ];
 
         if ($this->editMode && $this->methodId) {
@@ -81,6 +87,8 @@ class ShippingMethods extends Component
         $this->processing_days_max = $method->processing_days_max;
         $this->is_active = $method->is_active;
         $this->display_order = $method->display_order;
+        $this->icon = $method->icon ?? 'truck';
+        $this->delivery_text = $method->delivery_text ?? '';
 
         $this->editMode = true;
         $this->showModal = true;
@@ -104,6 +112,8 @@ class ShippingMethods extends Component
             'processing_days_max' => $this->processing_days_max,
             'is_active' => $this->is_active,
             'display_order' => $this->display_order,
+            'icon' => $this->icon,
+            'delivery_text' => $this->delivery_text,
         ];
 
         if ($this->editMode) {
@@ -169,11 +179,14 @@ class ShippingMethods extends Component
             'processing_days_max',
             'is_active',
             'display_order',
+            'icon',
+            'delivery_text',
         ]);
         $this->type = 'flat';
         $this->processing_days_min = 1;
         $this->processing_days_max = 5;
         $this->is_active = true;
+        $this->icon = 'truck';
     }
 
     public function render()
@@ -185,10 +198,20 @@ class ShippingMethods extends Component
                   ->orWhere('code', 'like', '%' . $this->search . '%');
         }
 
-        $methods = $query->orderBy('display_order')->paginate(15);
+        if ($this->statusFilter !== 'all') {
+            $query->where('is_active', $this->statusFilter === 'active');
+        }
+
+        $methods = $query->orderBy('display_order')->paginate(4);
+        $totalCarriers = ShippingMethod::count();
+        $defaultMethod = ShippingMethod::where('is_active', true)
+                            ->orderBy('display_order')
+                            ->first();
 
         return view('livewire.admin.shipping-methods', [
             'methods' => $methods,
+            'totalCarriers' => $totalCarriers,
+            'defaultMethod' => $defaultMethod,
         ])->layout('components.layouts.admin', [
             'header' => 'Shipping Methods',
         ]);

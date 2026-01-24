@@ -25,6 +25,8 @@ class ShippingMethod extends Model
         'applicable_regions',
         'is_active',
         'display_order',
+        'icon',
+        'delivery_text',
     ];
 
     protected $casts = [
