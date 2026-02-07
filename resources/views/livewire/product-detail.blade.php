@@ -58,15 +58,43 @@
                 <h1 class="text-3xl font-bold text-gray-900 mb-3">{{ $product->name }}</h1>
 
                 <!-- Rating -->
+                @php
+                    $averageRating = $product->getAverageRating();
+                    $reviewsCount = $product->getReviewsCount();
+                    $fullStars = floor($averageRating);
+                    $hasHalfStar = ($averageRating - $fullStars) >= 0.5;
+                @endphp
                 <div class="flex items-center gap-2 mb-4">
                     <div class="flex gap-1">
                         @for($i = 0; $i < 5; $i++)
-                            <svg class="w-5 h-5 {{ $i < 4 ? 'text-orange-400' : 'text-gray-300' }}" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
+                            @if($i < $fullStars)
+                                <svg class="w-5 h-5 text-orange-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                </svg>
+                            @elseif($i == $fullStars && $hasHalfStar)
+                                <svg class="w-5 h-5 text-orange-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <defs>
+                                        <linearGradient id="half-{{ $i }}">
+                                            <stop offset="50%" stop-color="currentColor"/>
+                                            <stop offset="50%" stop-color="#D1D5DB" stop-opacity="1"/>
+                                        </linearGradient>
+                                    </defs>
+                                    <path fill="url(#half-{{ $i }})" d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                </svg>
+                            @else
+                                <svg class="w-5 h-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                </svg>
+                            @endif
                         @endfor
                     </div>
-                    <span class="text-gray-700 text-sm">4.8 (1,240 Reviews)</span>
+                    <span class="text-gray-700 text-sm">
+                        @if($reviewsCount > 0)
+                            {{ number_format($averageRating, 1) }} ({{ number_format($reviewsCount) }} {{ $reviewsCount == 1 ? 'Review' : 'Reviews' }})
+                        @else
+                            No reviews yet
+                        @endif
+                    </span>
                 </div>
 
                 <!-- Price -->
@@ -171,6 +199,11 @@
                     </div>
                 @endif
 
+                <!-- Wishlist Button -->
+                <div class="mb-4">
+                    @livewire('wishlist-button', ['product' => $product])
+                </div>
+
                 <!-- Buttons -->
                 <div class="grid grid-cols-1 gap-3 mb-6">
                     <button 
@@ -222,57 +255,123 @@
         </div>
 
         <!-- Description & Reviews Tabs -->
-        <div class="bg-white rounded-lg shadow-md mb-12">
+        <div class="bg-white rounded-lg shadow-md mb-12" x-data="{ activeTab: 'description' }">
             <div class="flex border-b">
-                <button class="flex-1 py-4 px-6 font-semibold text-gray-900 border-b-2 border-orange-500">
+                <button @click="activeTab = 'description'" :class="activeTab === 'description' ? 'border-b-2 border-orange-500 text-gray-900' : 'text-gray-500 hover:text-gray-700'" class="flex-1 py-4 px-6 font-semibold transition">
                     DESCRIPTION
                 </button>
-                <button class="flex-1 py-4 px-6 font-semibold text-gray-500 hover:text-gray-700">
+                <button @click="activeTab = 'specifications'" :class="activeTab === 'specifications' ? 'border-b-2 border-orange-500 text-gray-900' : 'text-gray-500 hover:text-gray-700'" class="flex-1 py-4 px-6 font-semibold transition">
                     SPECIFICATIONS
                 </button>
-                <button class="flex-1 py-4 px-6 font-semibold text-gray-500 hover:text-gray-700">
-                    REVIEWS (1,240)
+                <button @click="activeTab = 'reviews'" :class="activeTab === 'reviews' ? 'border-b-2 border-orange-500 text-gray-900' : 'text-gray-500 hover:text-gray-700'" class="flex-1 py-4 px-6 font-semibold transition">
+                    REVIEWS ({{ $product->getReviewsCount() }})
                 </button>
-                <button class="flex-1 py-4 px-6 font-semibold text-gray-500 hover:text-gray-700">
+                <button @click="activeTab = 'shipping'" :class="activeTab === 'shipping' ? 'border-b-2 border-orange-500 text-gray-900' : 'text-gray-500 hover:text-gray-700'" class="flex-1 py-4 px-6 font-semibold transition">
                     SHIPPING & RETURNS
                 </button>
             </div>
 
-            <div class="p-6">
-                <h3 class="text-2xl font-bold text-gray-900 mb-4">Unmatched Sound Fidelity</h3>
+            <!-- Description Tab -->
+            <div x-show="activeTab === 'description'" class="p-6">
+                <h3 class="text-2xl font-bold text-gray-900 mb-4">Product Description</h3>
                 
                 @if($product->description)
-                    <p class="text-gray-700 mb-4">
+                    <div class="text-gray-700 mb-4 prose max-w-none">
                         {!! nl2br(e($product->description)) !!}
-                    </p>
+                    </div>
+                @else
+                    <p class="text-gray-500">No description available.</p>
                 @endif
                 
+                @if($product->short_description)
+                    <div class="mt-4 p-4 bg-gray-50 rounded-lg">
+                        <p class="text-gray-700">{{ $product->short_description }}</p>
+                    </div>
+                @endif
+            </div>
+
+            <!-- Specifications Tab -->
+            <div x-show="activeTab === 'specifications'" class="p-6">
+                <h3 class="text-2xl font-bold text-gray-900 mb-4">Product Specifications</h3>
                 <ul class="space-y-2">
                     <li class="flex items-start gap-3">
                         <svg class="w-5 h-5 text-orange-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 10 10.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
                         </svg>
-                        <span class="text-gray-700">Active Noise Cancellation (ANC)</span>
+                        <span class="text-gray-700">SKU: {{ $product->sku }}</span>
                     </li>
                     <li class="flex items-start gap-3">
                         <svg class="w-5 h-5 text-orange-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 10 10.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
                         </svg>
-                        <span class="text-gray-700">40-Hour Battery Life with Fast Charge</span>
+                        <span class="text-gray-700">Category: {{ $product->category->name }}</span>
                     </li>
                     <li class="flex items-start gap-3">
                         <svg class="w-5 h-5 text-orange-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 10 10.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
                         </svg>
-                        <span class="text-gray-700">Hi-Res Audio Certification</span>
-                    </li>
-                    <li class="flex items-start gap-3">
-                        <svg class="w-5 h-5 text-orange-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 10 10.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                        </svg>
-                        <span class="text-gray-700">Bluetooth 5.2 Multipoint Connectivity</span>
+                        <span class="text-gray-700">Stock: {{ $product->stock_quantity }} units</span>
                     </li>
                 </ul>
+            </div>
+
+            <!-- Reviews Tab -->
+            <div x-show="activeTab === 'reviews'" class="p-6">
+                @livewire('product-reviews', ['product' => $product])
+            </div>
+
+            <!-- Shipping & Returns Tab -->
+            <div x-show="activeTab === 'shipping'" class="p-6">
+                <h3 class="text-2xl font-bold text-gray-900 mb-4">Shipping & Returns</h3>
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="font-semibold text-gray-900 mb-2">Shipping Information</h4>
+                        <ul class="space-y-2 text-gray-700">
+                            <li class="flex items-start gap-3">
+                                <svg class="w-5 h-5 text-orange-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+                                    <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z" />
+                                </svg>
+                                <span>Free Shipping on orders over $50</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <svg class="w-5 h-5 text-orange-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+                                </svg>
+                                <span>Standard shipping: 3-5 business days</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <svg class="w-5 h-5 text-orange-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+                                </svg>
+                                <span>Express shipping: 1-2 business days (additional fee)</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-900 mb-2">Return Policy</h4>
+                        <ul class="space-y-2 text-gray-700">
+                            <li class="flex items-start gap-3">
+                                <svg class="w-5 h-5 text-orange-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                </svg>
+                                <span>30-day return policy</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <svg class="w-5 h-5 text-orange-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                </svg>
+                                <span>Items must be in original condition</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <svg class="w-5 h-5 text-orange-500 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                </svg>
+                                <span>Free return shipping for defective items</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
 

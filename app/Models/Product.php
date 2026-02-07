@@ -55,6 +55,31 @@ class Product extends Model
         return $this->hasMany(OrderItem::class);
     }
 
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function approvedReviews(): HasMany
+    {
+        return $this->hasMany(Review::class)->where('is_approved', true);
+    }
+
+    public function wishlists(): HasMany
+    {
+        return $this->hasMany(Wishlist::class);
+    }
+
+    public function getAverageRating(): float
+    {
+        return $this->approvedReviews()->avg('rating') ?? 0;
+    }
+
+    public function getReviewsCount(): int
+    {
+        return $this->approvedReviews()->count();
+    }
+
     public function getCurrentPrice(): float
     {
         return $this->discount_price ?? $this->base_price;
@@ -67,7 +92,7 @@ class Product extends Model
 
     public function getDiscountPercentage(): int
     {
-        if (!$this->hasDiscount()) {
+        if (! $this->hasDiscount()) {
             return 0;
         }
 

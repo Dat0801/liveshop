@@ -7,11 +7,11 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Services\CartService;
+use DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Livewire\Component;
 use Livewire\Attributes\Validate;
-use DomainException;
+use Livewire\Component;
 
 class Checkout extends Component
 {
@@ -67,19 +67,27 @@ class Checkout extends Component
     public $notes = '';
 
     public $coupon_code = '';
+
     public $coupon_applied = false;
+
     public $coupon_error = '';
 
     public $selected_shipping_method_id = null;
+
     public $available_shipping_methods = [];
 
     public $saved_addresses = [];
+
     public $selected_billing_address_id = null;
+
     public $selected_shipping_address_id = null;
+
     public $save_billing_address = false;
+
     public $save_shipping_address = false;
 
     public $payment_method = 'cod';
+
     public $available_payment_methods = [
         'cod' => 'Cash on Delivery',
         'bank_transfer' => 'Bank Transfer',
@@ -88,9 +96,13 @@ class Checkout extends Component
     ];
 
     public $subtotal = 0;
+
     public $tax = 0;
+
     public $shipping = 0;
+
     public $discount = 0;
+
     public $total = 0;
 
     public function mount(CartService $cartService)
@@ -112,13 +124,13 @@ class Checkout extends Component
 
     protected function calculateTotals()
     {
-        if (!$this->items || $this->items->isEmpty()) {
+        if (! $this->items || $this->items->isEmpty()) {
             return;
         }
 
         $this->subtotal = $this->items->sum('subtotal');
         $this->tax = $this->subtotal * 0.1; // 10% tax
-        
+
         // Calculate shipping based on selected method
         if ($this->selected_shipping_method_id) {
             $method = \App\Models\ShippingMethod::find($this->selected_shipping_method_id);
@@ -130,7 +142,7 @@ class Checkout extends Component
         } else {
             $this->shipping = 0;
         }
-        
+
         $this->total = $this->subtotal + $this->tax + $this->shipping - $this->discount;
     }
 
@@ -143,7 +155,7 @@ class Checkout extends Component
             });
 
         // Auto-select first available method
-        if ($this->available_shipping_methods->isNotEmpty() && !$this->selected_shipping_method_id) {
+        if ($this->available_shipping_methods->isNotEmpty() && ! $this->selected_shipping_method_id) {
             $this->selected_shipping_method_id = $this->available_shipping_methods->first()->id;
         }
     }
@@ -199,7 +211,7 @@ class Checkout extends Component
             $this->billing_state = $address->state;
             $this->billing_zip = $address->postal_code;
             $this->billing_country = $address->country;
-            
+
             $this->loadShippingMethods();
             $this->calculateTotals();
         }
@@ -240,23 +252,27 @@ class Checkout extends Component
 
         if (empty($this->coupon_code)) {
             $this->coupon_error = 'Please enter a coupon code.';
+
             return;
         }
 
         $coupon = \App\Models\Coupon::where('code', $this->coupon_code)->first();
 
-        if (!$coupon) {
+        if (! $coupon) {
             $this->coupon_error = 'Invalid coupon code.';
+
             return;
         }
 
-        if (!$coupon->isValid(auth()->id())) {
+        if (! $coupon->isValid(auth()->id())) {
             $this->coupon_error = 'This coupon is not valid or has expired.';
+
             return;
         }
 
         if ($coupon->min_purchase && $this->subtotal < $coupon->min_purchase) {
-            $this->coupon_error = 'Minimum purchase of $' . number_format($coupon->min_purchase, 2) . ' required.';
+            $this->coupon_error = 'Minimum purchase of $'.number_format($coupon->min_purchase, 2).' required.';
+
             return;
         }
 
@@ -265,8 +281,9 @@ class Checkout extends Component
             return ['product_id' => $item->product_id];
         })->toArray();
 
-        if (!$coupon->isApplicable($cartItems)) {
+        if (! $coupon->isApplicable($cartItems)) {
             $this->coupon_error = 'This coupon is not applicable to items in your cart.';
+
             return;
         }
 
@@ -290,18 +307,21 @@ class Checkout extends Component
     {
         $this->validate();
 
-        if (!$this->items || $this->items->isEmpty()) {
+        if (! $this->items || $this->items->isEmpty()) {
             session()->flash('error', 'Your cart is empty!');
+
             return;
         }
 
-        if (!$this->selected_shipping_method_id) {
+        if (! $this->selected_shipping_method_id) {
             session()->flash('error', 'Please select a shipping method.');
+
             return;
         }
 
-        if (!$this->payment_method) {
+        if (! $this->payment_method) {
             session()->flash('error', 'Please select a payment method.');
+
             return;
         }
 
@@ -316,7 +336,7 @@ class Checkout extends Component
                 foreach ($this->items as $item) {
                     $product = Product::with('variants')->lockForUpdate()->find($item->product_id);
 
-                    if (!$product) {
+                    if (! $product) {
                         throw new DomainException('A product in your cart no longer exists.');
                     }
 
@@ -332,7 +352,7 @@ class Checkout extends Component
                 // Create order
                 $order = Order::create([
                     'user_id' => auth()->id(),
-                    'order_number' => 'ORD-' . strtoupper(Str::random(10)),
+                    'order_number' => 'ORD-'.strtoupper(Str::random(10)),
                     'status' => 'pending',
                     'subtotal' => $this->subtotal,
                     'tax' => $this->tax,
@@ -399,7 +419,7 @@ class Checkout extends Component
                 }
 
                 // Save billing address if requested
-                if ($this->save_billing_address && !$this->selected_billing_address_id) {
+                if ($this->save_billing_address && ! $this->selected_billing_address_id) {
                     Address::create([
                         'user_id' => auth()->id(),
                         'full_name' => $this->billing_name,
@@ -414,7 +434,7 @@ class Checkout extends Component
                 }
 
                 // Save shipping address if requested
-                if ($this->save_shipping_address && !$this->same_as_billing && !$this->selected_shipping_address_id) {
+                if ($this->save_shipping_address && ! $this->same_as_billing && ! $this->selected_shipping_address_id) {
                     Address::create([
                         'user_id' => auth()->id(),
                         'full_name' => $this->shipping_name,
@@ -441,8 +461,21 @@ class Checkout extends Component
 
                 return $order;
             });
+
+            // Send order confirmation email
+            if ($order->billing_email) {
+                try {
+                    \Mail::to($order->billing_email)->send(
+                        new \App\Mail\OrderConfirmation($order)
+                    );
+                } catch (\Exception $e) {
+                    // Log error but don't fail the order
+                    \Log::error('Failed to send order confirmation email: '.$e->getMessage());
+                }
+            }
         } catch (DomainException $e) {
             session()->flash('error', $e->getMessage());
+
             return;
         }
 
