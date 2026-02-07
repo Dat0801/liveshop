@@ -199,6 +199,11 @@
                     </div>
                 @endif
 
+                <!-- Wishlist Button -->
+                <div class="mb-4">
+                    @livewire('wishlist-button', ['product' => $product])
+                </div>
+
                 <!-- Buttons -->
                 <div class="grid grid-cols-1 gap-3 mb-6">
                     <button 

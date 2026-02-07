@@ -1,31 +1,31 @@
 <?php
 
-use App\Livewire\HomePage;
-use App\Livewire\ProductList;
-use App\Livewire\ProductDetail;
-use App\Livewire\CartPage;
-use App\Livewire\Checkout;
-use App\Livewire\Admin\Dashboard;
-use App\Livewire\Admin\ProductManagement;
-use App\Livewire\Admin\OrderManagement;
 use App\Livewire\Admin\CategoryManagement;
-use App\Livewire\Admin\VariantManagement;
-use App\Livewire\Admin\MediaManager;
 use App\Livewire\Admin\CouponManagement;
-use App\Livewire\Admin\UserManagement;
-use App\Livewire\Admin\StockAdjustments;
+use App\Livewire\Admin\Dashboard;
+use App\Livewire\Admin\MediaManager;
+use App\Livewire\Admin\OrderManagement;
+use App\Livewire\Admin\ProductManagement;
 use App\Livewire\Admin\ShippingMethods;
+use App\Livewire\Admin\StockAdjustments;
+use App\Livewire\Admin\UserManagement;
+use App\Livewire\Admin\VariantManagement;
+use App\Livewire\Auth\ForgotPassword;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
-use App\Livewire\Auth\ForgotPassword;
 use App\Livewire\Auth\ResetPassword;
 use App\Livewire\Auth\VerifyEmail;
-use App\Livewire\User\Dashboard as UserDashboard;
-use App\Livewire\User\Profile;
+use App\Livewire\CartPage;
+use App\Livewire\Checkout;
+use App\Livewire\HomePage;
+use App\Livewire\ProductDetail;
+use App\Livewire\ProductList;
 use App\Livewire\User\ChangePassword;
+use App\Livewire\User\Dashboard as UserDashboard;
 use App\Livewire\User\ManageAddresses;
-use App\Livewire\User\OrderHistory;
 use App\Livewire\User\OrderDetail;
+use App\Livewire\User\OrderHistory;
+use App\Livewire\User\Profile;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -62,6 +62,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile/addresses', ManageAddresses::class)->name('profile.addresses');
     Route::get('/profile/orders', OrderHistory::class)->name('profile.orders');
     Route::get('/order/{order}', OrderDetail::class)->name('order.detail');
+    Route::get('/wishlist', \App\Livewire\WishlistPage::class)->name('wishlist');
 });
 
 // Product Routes
@@ -96,4 +97,3 @@ Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function () {
 });
 
 require __DIR__.'/auth.php';
-
