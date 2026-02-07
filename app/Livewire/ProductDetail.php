@@ -9,13 +9,16 @@ use Livewire\Component;
 class ProductDetail extends Component
 {
     public Product $product;
+
     public $selectedVariants = [];
+
     public $quantity = 1;
+
     public $currentPrice;
 
     public function mount(Product $product)
     {
-        $this->product = $product->load(['category', 'variants']);
+        $this->product = $product->load(['category', 'variants', 'approvedReviews']);
         $this->currentPrice = $product->getCurrentPrice();
     }
 
@@ -57,7 +60,7 @@ class ProductDetail extends Component
 
     public function updateQuantity($value)
     {
-        $this->quantity = max(1, (int)$value);
+        $this->quantity = max(1, (int) $value);
     }
 
     public function updatedQuantity($value)
@@ -71,15 +74,15 @@ class ProductDetail extends Component
     {
         try {
             $cartService->add(
-                $this->product->id, 
-                $this->quantity, 
+                $this->product->id,
+                $this->quantity,
                 $this->selectedVariants
             );
 
             // Notify UI to open the drawer and refresh cart counters
             $this->dispatch('open-cart');
             $this->dispatch('cart-updated');
-            
+
             session()->flash('message', 'Product added to cart successfully!');
         } catch (\DomainException $e) {
             session()->flash('error', $e->getMessage());
