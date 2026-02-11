@@ -241,45 +241,6 @@
                 </div>
             </div>
 
-                                        <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold 
-                                            @if($order->status === 'delivered')
-                                                bg-green-100 text-green-800
-                                            @elseif($order->status === 'shipped')
-                                                bg-blue-100 text-blue-800
-                                            @elseif($order->status === 'processing')
-                                                bg-yellow-100 text-yellow-800
-                                            @else
-                                                bg-gray-100 text-gray-800
-                                            @endif
-                                        ">
-                                            @if($order->status === 'delivered')
-                                                ✓ Delivered
-                                            @elseif($order->status === 'shipped')
-                                                → Shipped
-                                            @elseif($order->status === 'processing')
-                                                ⏳ Processing
-                                            @else
-                                                {{ ucfirst($order->status) }}
-                                            @endif
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 font-semibold text-gray-900">${{ number_format($order->total, 2) }}</td>
-                                    <td class="px-6 py-4">
-                                        <a href="#" class="text-orange-600 hover:text-orange-700 font-semibold text-sm">Details</a>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="5" class="px-6 py-8 text-center text-gray-500">
-                                        No orders found. Start shopping now!
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
             <!-- Promotional Banner -->
             <div class="bg-gradient-to-r from-orange-400 to-orange-600 rounded-lg shadow-lg p-8 text-white">
                 <div class="flex items-center justify-between">
